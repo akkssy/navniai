@@ -13,6 +13,7 @@ import ReactFlow, {
   BackgroundVariant,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { executeWorkflowClientSide } from '../lib/workflowExecutor'
 import { AgentNode } from './AgentNode'
 import { AgentPalette } from './AgentPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
@@ -198,23 +199,12 @@ export function WorkflowBuilder() {
 
     try {
       const workflow = buildWorkflowPayload()
-      const fetchUrl = `/api/workflow/execute`
-      console.log('Running workflow, fetching:', fetchUrl, workflow)
-      const response = await fetch(fetchUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workflow,
-          inputs: {},
-          user_id: 'web-user',
-        }),
+      console.log('Running workflow client-side:', workflow)
+      const result = await executeWorkflowClientSide({
+        workflow,
+        inputs: {},
+        user_id: 'web-user',
       })
-
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`)
-      }
-
-      const result = await response.json()
       if (result.status === 'completed' && result.outputs) {
         setExecutionOutputs(result.outputs)
         setShowOutputPanel(true)
@@ -222,7 +212,7 @@ export function WorkflowBuilder() {
       setRunResult({
         status: result.status === 'completed' ? 'success' : 'error',
         message: result.status === 'completed'
-          ? `✅ Workflow completed! ${result.steps_completed}/${result.total_steps} steps in ${result.execution_time.toFixed(1)}s`
+          ? `✅ Workflow completed! ${result.steps_completed}/${result.total_steps} steps in ${(result.execution_time || 0).toFixed(1)}s`
           : `❌ Workflow failed: ${result.error || 'Unknown error'}`
       })
     } catch (error: any) {
