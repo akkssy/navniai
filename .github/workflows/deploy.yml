@@ -30,6 +30,8 @@ jobs:
 
       - name: Build static export
         run: npx next build
+        env:
+          DEPLOY_TARGET: ghpages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

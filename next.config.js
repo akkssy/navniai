@@ -1,13 +1,22 @@
 /** @type {import('next').NextConfig} */
+const isGHPages = process.env.DEPLOY_TARGET === 'ghpages'
+
 const nextConfig = {
-  output: 'export',
-  basePath: '/navniai',
-  assetPrefix: '/navniai/',
+  ...(isGHPages
+    ? {
+        output: 'export',
+        basePath: '/navniai',
+        assetPrefix: '/navniai/',
+        trailingSlash: true,
+      }
+    : {}),
   images: {
     unoptimized: true,
   },
   reactStrictMode: true,
-  trailingSlash: true,
+  env: {
+    NEXT_PUBLIC_DEPLOY_TARGET: process.env.DEPLOY_TARGET || 'vercel',
+  },
 }
 
 module.exports = nextConfig

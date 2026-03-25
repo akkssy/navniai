@@ -199,12 +199,24 @@ export function WorkflowBuilder() {
 
     try {
       const workflow = buildWorkflowPayload()
-      console.log('Running workflow client-side:', workflow)
-      const result = await executeWorkflowClientSide({
-        workflow,
-        inputs: {},
-        user_id: 'web-user',
-      })
+      const payload = { workflow, inputs: {}, user_id: 'web-user' }
+
+      let result: any
+      if (process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'ghpages') {
+        console.log('Running workflow client-side:', workflow)
+        result = await executeWorkflowClientSide(payload)
+      } else {
+        console.log('Running workflow via API:', workflow)
+        const response = await fetch('/api/workflow/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        }
+        result = await response.json()
+      }
       if (result.status === 'completed' && result.outputs) {
         setExecutionOutputs(result.outputs)
         setShowOutputPanel(true)
