@@ -14,6 +14,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { executeWorkflowClientSide } from '../lib/workflowExecutor'
+import { loadSettings, getProviderBadge, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
 import { AgentNode } from './AgentNode'
 import { AgentPalette } from './AgentPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
@@ -267,6 +268,21 @@ export function WorkflowBuilder() {
 
         {/* Toolbar */}
         <div className="absolute top-4 right-4 flex gap-2 items-center">
+          {/* Active LLM provider badge */}
+          {(() => {
+            const s = typeof window !== 'undefined' ? loadSettings() : null
+            if (!s) return null
+            const key = s.activeProvider as LLMProviderKey
+            const p = PROVIDER_REGISTRY[key]
+            if (!p) return null
+            const badge = getProviderBadge(key)
+            return (
+              <a href="/settings" className={`text-xs px-3 py-2 rounded-lg border border-dark-700 bg-dark-800 flex items-center gap-1.5 hover:border-dark-500 transition ${badge.textClass}`}>
+                <span>{p.icon}</span>
+                <span>{badge.label}</span>
+              </a>
+            )
+          })()}
           {/* Status badge */}
           {nodes.length > 0 && (
             <span className="text-xs text-gray-400 bg-dark-800 border border-dark-700 px-3 py-2 rounded-lg">
@@ -345,15 +361,14 @@ export function WorkflowBuilder() {
                     <span className="text-lg">{agentIcon}</span>
                     <span className="font-medium text-white text-sm">{agentName}</span>
                     <span className="text-xs text-gray-400">→ {action}</span>
-                    {(stepResult as any).provider && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        (stepResult as any).provider === 'ollama' ? 'bg-purple-600/20 text-purple-400'
-                          : (stepResult as any).provider === 'openai' ? 'bg-emerald-600/20 text-emerald-400'
-                          : 'bg-gray-600/20 text-gray-400'
-                      }`}>
-                        {(stepResult as any).provider}
-                      </span>
-                    )}
+                    {(stepResult as any).provider && (() => {
+                      const badge = getProviderBadge((stepResult as any).provider)
+                      return (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bgClass} ${badge.textClass}`}>
+                          {badge.label}
+                        </span>
+                      )
+                    })()}
                     <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
                       stepResult.status === 'completed'
                         ? 'bg-green-600/20 text-green-400'

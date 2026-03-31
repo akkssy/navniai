@@ -1,4 +1,5 @@
 // Client-side workflow executor (for GitHub Pages static export)
+import { callLLMWithFallback, loadSettings } from '@/lib/llmProviders'
 
 interface WorkflowStep {
   id: string
@@ -71,15 +72,10 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload) {
           parts.push(k + ': ' + r)
         }
       }
-      const res = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'llama3.2', prompt: parts.join('\n\n'), system: sys, stream: false }),
-        signal: AbortSignal.timeout(60000),
-      })
-      if (!res.ok) throw new Error('Ollama unavailable')
-      output = (await res.json()).response || ''
-      provider = 'ollama'
+      // Use multi-provider fallback from shared module
+      const result = await callLLMWithFallback(sys, parts.join('\n\n'), loadSettings(), 60000)
+      output = result.text
+      provider = result.provider
     } catch {
       output = getSimulatedOutput(step)
     }

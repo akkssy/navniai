@@ -18,13 +18,21 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Workflow Dashboard</h1>
-            <Link
-              href="/workflow/new"
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-2 transition"
-            >
-              <PlusIcon className="h-5 w-5" />
-              New Workflow
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/settings"
+                className="px-4 py-2 bg-dark-600 hover:bg-dark-500 rounded-lg flex items-center gap-2 transition text-gray-300"
+              >
+                ⚙️ LLM Settings
+              </Link>
+              <Link
+                href="/workflow/new"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-2 transition"
+              >
+                <PlusIcon className="h-5 w-5" />
+                New Workflow
+              </Link>
+            </div>
           </div>
         </div>
       </header>

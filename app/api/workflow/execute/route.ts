@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { callLLMWithFallback, DEFAULT_SETTINGS, type LLMSettings } from '@/lib/llmProviders'
 
 interface WorkflowStep {
   id: string
@@ -23,13 +24,22 @@ interface WorkflowPayload {
   user_id: string
 }
 
-// --- LLM Integration ---
+// --- LLM Integration (now uses lib/llmProviders.ts) ---
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2'
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-const LLM_PROVIDER = process.env.LLM_PROVIDER || 'auto' // 'ollama' | 'openai' | 'auto' | 'simulate'
+// Build server-side settings from env vars (merged with defaults)
+function getServerSettings(): LLMSettings {
+  const s = { ...DEFAULT_SETTINGS }
+  // Override from env if present
+  if (process.env.OLLAMA_URL) s.providers.ollama = { ...s.providers.ollama, baseUrl: process.env.OLLAMA_URL }
+  if (process.env.OLLAMA_MODEL) s.providers.ollama = { ...s.providers.ollama, model: process.env.OLLAMA_MODEL }
+  if (process.env.OPENAI_API_KEY) s.providers.openai = { ...s.providers.openai, apiKey: process.env.OPENAI_API_KEY }
+  if (process.env.OPENAI_MODEL) s.providers.openai = { ...s.providers.openai, model: process.env.OPENAI_MODEL }
+  if (process.env.GEMINI_API_KEY) s.providers.gemini = { ...s.providers.gemini, apiKey: process.env.GEMINI_API_KEY }
+  if (process.env.ANTHROPIC_API_KEY) s.providers.anthropic = { ...s.providers.anthropic, apiKey: process.env.ANTHROPIC_API_KEY }
+  if (process.env.GROQ_API_KEY) s.providers.groq = { ...s.providers.groq, apiKey: process.env.GROQ_API_KEY }
+  if (process.env.OPENROUTER_API_KEY) s.providers.openrouter = { ...s.providers.openrouter, apiKey: process.env.OPENROUTER_API_KEY }
+  return s
+}
 
 // System prompts for built-in coding agents
 const SYSTEM_AGENT_PROMPTS: Record<string, string> = {
@@ -43,76 +53,12 @@ const SYSTEM_AGENT_PROMPTS: Record<string, string> = {
   devops: 'You are a DevOps engineer. Help with CI/CD pipelines, deployment configs, infrastructure as code, and operational tasks.',
 }
 
-async function callOllama(systemPrompt: string, userMessage: string): Promise<string> {
-  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: OLLAMA_MODEL,
-      prompt: userMessage,
-      system: systemPrompt,
-      stream: false,
-    }),
-    signal: AbortSignal.timeout(60000), // 60s timeout
-  })
-  if (!response.ok) throw new Error(`Ollama error: ${response.status}`)
-  const data = await response.json()
-  return data.response || ''
-}
-
-async function callOpenAI(systemPrompt: string, userMessage: string): Promise<string> {
-  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set')
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-    }),
-    signal: AbortSignal.timeout(30000),
-  })
-  if (!response.ok) throw new Error(`OpenAI error: ${response.status}`)
-  const data = await response.json()
-  return data.choices?.[0]?.message?.content || ''
-}
-
+// callLLM now delegates to the shared multi-provider module
 async function callLLM(systemPrompt: string, userMessage: string): Promise<{ text: string; provider: string }> {
-  // 'simulate' mode: skip LLM entirely
-  if (LLM_PROVIDER === 'simulate') {
-    throw new Error('simulate_mode')
-  }
-
-  // Try Ollama first if provider is 'ollama' or 'auto'
-  if (LLM_PROVIDER === 'ollama' || LLM_PROVIDER === 'auto') {
-    try {
-      const text = await callOllama(systemPrompt, userMessage)
-      return { text, provider: 'ollama' }
-    } catch (e) {
-      if (LLM_PROVIDER === 'ollama') throw e
-      // auto: fall through to OpenAI
-    }
-  }
-
-  // Try OpenAI if provider is 'openai' or 'auto' fallback
-  if (LLM_PROVIDER === 'openai' || LLM_PROVIDER === 'auto') {
-    try {
-      const text = await callOpenAI(systemPrompt, userMessage)
-      return { text, provider: 'openai' }
-    } catch (e) {
-      if (LLM_PROVIDER === 'openai') throw e
-      // auto: fall through to simulation
-    }
-  }
-
-  throw new Error('no_llm_available')
+  const settings = getServerSettings()
+  const result = await callLLMWithFallback(systemPrompt, userMessage, settings, 60000)
+  if (result.provider === 'simulated') throw new Error('no_llm_available')
+  return { text: result.text, provider: result.provider }
 }
 
 function buildUserMessage(step: WorkflowStep, prevOutputs: Record<string, any>): string {
