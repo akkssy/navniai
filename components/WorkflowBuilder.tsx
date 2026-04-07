@@ -242,7 +242,7 @@ export function WorkflowBuilder() {
   const configuredCount = nodes.filter(n => n.data.action).length
 
   return (
-    <div className="h-screen flex bg-dark-900">
+    <div className="h-screen flex bg-dark-950">
       {/* Agent Palette */}
       <AgentPalette agents={allAgents} onAddAgent={addAgentNode} onCreateAgent={addCustomAgent} onDeleteAgent={deleteCustomAgent} />
 
@@ -260,15 +260,14 @@ export function WorkflowBuilder() {
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
           fitView
-          className="bg-dark-900"
+          className="bg-dark-950"
         >
-          <Background variant={BackgroundVariant.Dots} gap={12} size={1} color="#334155" />
-          <Controls className="bg-dark-800 border border-dark-700" />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
+          <Controls className="bg-dark-800/80 backdrop-blur-sm border border-white/[0.06] rounded-xl" />
         </ReactFlow>
 
         {/* Toolbar */}
         <div className="absolute top-4 right-4 flex gap-2 items-center">
-          {/* Active LLM provider badge */}
           {(() => {
             const s = typeof window !== 'undefined' ? loadSettings() : null
             if (!s) return null
@@ -277,44 +276,33 @@ export function WorkflowBuilder() {
             if (!p) return null
             const badge = getProviderBadge(key)
             return (
-              <a href="/settings" className={`text-xs px-3 py-2 rounded-lg border border-dark-700 bg-dark-800 flex items-center gap-1.5 hover:border-dark-500 transition ${badge.textClass}`}>
+              <a href="/settings" className={`text-[11px] px-3 py-2 glass-card flex items-center gap-1.5 hover:bg-dark-800/80 transition ${badge.textClass}`}>
                 <span>{p.icon}</span>
                 <span>{badge.label}</span>
               </a>
             )
           })()}
-          {/* Status badge */}
           {nodes.length > 0 && (
-            <span className="text-xs text-gray-400 bg-dark-800 border border-dark-700 px-3 py-2 rounded-lg">
+            <span className="text-[11px] text-dark-400 glass-card px-3 py-2">
               {configuredCount}/{nodes.length} configured
             </span>
           )}
-          <button
-            onClick={exportWorkflow}
-            disabled={nodes.length === 0}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-dark-600 disabled:text-gray-500 text-white rounded-lg flex items-center gap-2 transition text-sm"
-          >
+          <button onClick={exportWorkflow} disabled={nodes.length === 0}
+            className="px-3.5 py-2 bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-dark-700 disabled:text-dark-500 text-white rounded-xl flex items-center gap-1.5 transition text-xs font-medium backdrop-blur-sm">
             💾 Save
           </button>
-          <button
-            onClick={runWorkflow}
-            disabled={isRunning || nodes.length === 0}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-dark-600 disabled:text-gray-500 text-white rounded-lg flex items-center gap-2 transition text-sm"
-          >
-            {isRunning ? (
-              <><span className="animate-spin">⏳</span> Running...</>
-            ) : (
-              <>▶️ Run Workflow</>
-            )}
+          <button onClick={runWorkflow} disabled={isRunning || nodes.length === 0}
+            className="px-3.5 py-2 bg-primary-600/90 hover:bg-primary-500 disabled:bg-dark-700 disabled:text-dark-500 text-white rounded-xl flex items-center gap-1.5 transition text-xs font-medium backdrop-blur-sm">
+            {isRunning ? <><span className="animate-spin">⏳</span> Running...</> : <>▶️ Run Workflow</>}
           </button>
         </div>
 
         {/* Run Result Toast */}
         {runResult && (
-          <div className={`absolute top-16 right-4 px-4 py-3 rounded-lg text-sm max-w-md shadow-xl border ${
+          <div className={`absolute top-16 right-4 px-4 py-3 rounded-xl text-xs max-w-md backdrop-blur-xl border ${
             runResult.status === 'success'
-              ? 'bg-green-900/80 border-green-700 text-green-200'
-              : 'bg-red-900/80 border-red-700 text-red-200'
+              ? 'bg-emerald-900/60 border-emerald-700/40 text-emerald-200'
+              : 'bg-red-900/60 border-red-700/40 text-red-200'
           }`}>
             {runResult.message}
           </div>
@@ -323,61 +311,51 @@ export function WorkflowBuilder() {
         {/* Empty state */}
         {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center text-gray-600">
-              <p className="text-4xl mb-3">🔧</p>
-              <p className="text-lg font-medium">Drop agents from the left palette</p>
-              <p className="text-sm mt-1">Connect them to build your workflow</p>
+            <div className="text-center text-dark-500">
+              <p className="text-4xl mb-3 opacity-40">🔧</p>
+              <p className="text-base font-medium">Drop agents from the left palette</p>
+              <p className="text-sm mt-1 text-dark-600">Connect them to build your workflow</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Output Panel (slides up from bottom) */}
+      {/* Output Panel */}
       {showOutputPanel && executionOutputs && (
-        <div className="h-1/2 border-t border-dark-600 bg-dark-800 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2 bg-dark-700 border-b border-dark-600">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+        <div className="h-1/2 border-t border-white/[0.06] bg-dark-900/95 backdrop-blur-xl flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
+            <h3 className="text-xs font-semibold text-white flex items-center gap-2">
               📋 Execution Output
-              <span className="text-xs bg-green-600/30 text-green-400 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                 {Object.keys(executionOutputs).length} step(s)
               </span>
             </h3>
-            <button
-              onClick={() => setShowOutputPanel(false)}
-              className="text-gray-400 hover:text-white text-sm px-2 py-1 rounded hover:bg-dark-600 transition"
-            >
+            <button onClick={() => setShowOutputPanel(false)}
+              className="text-dark-400 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/[0.04] transition">
               ✕ Close
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {Object.entries(executionOutputs).map(([stepId, stepResult]) => {
               const node = nodes.find(n => n.id === stepId)
               const agentName = node?.data?.agent?.name || stepId
               const agentIcon = node?.data?.agent?.icon || '⚙️'
               const action = node?.data?.action || 'execute'
               return (
-                <div key={stepId} className="bg-dark-900 rounded-lg border border-dark-600 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-dark-700/50 border-b border-dark-600">
-                    <span className="text-lg">{agentIcon}</span>
-                    <span className="font-medium text-white text-sm">{agentName}</span>
-                    <span className="text-xs text-gray-400">→ {action}</span>
+                <div key={stepId} className="glass-card overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-white/[0.02]">
+                    <span className="text-base">{agentIcon}</span>
+                    <span className="font-medium text-white text-xs">{agentName}</span>
+                    <span className="text-[10px] text-dark-400">→ {action}</span>
                     {(stepResult as any).provider && (() => {
                       const badge = getProviderBadge((stepResult as any).provider)
-                      return (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bgClass} ${badge.textClass}`}>
-                          {badge.label}
-                        </span>
-                      )
+                      return <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bgClass} ${badge.textClass}`}>{badge.label}</span>
                     })()}
-                    <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
-                      stepResult.status === 'completed'
-                        ? 'bg-green-600/20 text-green-400'
-                        : 'bg-red-600/20 text-red-400'
-                    }`}>
-                      {stepResult.status}
-                    </span>
+                    <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${
+                      stepResult.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                    }`}>{stepResult.status}</span>
                   </div>
-                  <pre className="p-4 text-sm text-gray-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
+                  <pre className="p-4 text-xs text-dark-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
                     {stepResult.output}
                   </pre>
                 </div>
@@ -388,7 +366,7 @@ export function WorkflowBuilder() {
       )}
       </div>
 
-      {/* Node Config Panel (slides in from right) */}
+      {/* Node Config Panel */}
       {selectedNode && (
         <NodeConfigPanel
           node={selectedNode}

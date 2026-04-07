@@ -33,47 +33,49 @@ export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => 
 
   return (
     <div
-      className={`px-4 py-3 rounded-lg shadow-xl border-2 min-w-[220px] bg-dark-800 cursor-pointer transition-all ${
-        selected ? 'ring-2 ring-white/30 scale-105' : 'hover:brightness-110'
+      className={`px-4 py-3 rounded-2xl min-w-[220px] bg-dark-800/80 backdrop-blur-xl cursor-pointer transition-all duration-200 border ${
+        selected
+          ? 'border-white/20 scale-[1.03]'
+          : 'border-white/[0.06] hover:border-white/[0.12]'
       }`}
       style={{
-        borderColor: agent.color,
         boxShadow: selected
-          ? `0 4px 24px ${agent.color}60, 0 0 0 2px ${agent.color}30`
-          : `0 4px 20px ${agent.color}40`,
+          ? `0 8px 32px ${agent.color}30, 0 0 0 1px ${agent.color}25, inset 0 0 0 1px rgba(255,255,255,0.04)`
+          : `0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.02)`,
       }}
     >
-      <Handle type="target" position={Position.Top} className="w-3 h-3" style={{ background: agent.color }} />
+      <Handle type="target" position={Position.Top} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid rgba(0,0,0,0.3)' }} />
 
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-2xl">{agent.icon}</span>
-        <span className="font-bold text-white text-sm">{agent.name}</span>
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg" style={{ background: agent.color + '18' }}>
+          {agent.icon}
+        </div>
+        <span className="font-semibold text-white text-sm tracking-tight">{agent.name}</span>
       </div>
 
-      <div className={`text-xs mb-1 flex items-center gap-1 ${isConfigured ? 'text-green-400' : 'text-gray-500'}`}>
-        <span>{isConfigured ? '✓' : '○'}</span>
+      <div className={`text-[11px] mb-1 flex items-center gap-1 ${isConfigured ? 'text-emerald-400' : 'text-dark-500'}`}>
+        <span className="text-[10px]">{isConfigured ? '✓' : '○'}</span>
         <span>{actionLabel}</span>
       </div>
 
-      {/* Input count badge */}
       {isConfigured && Object.keys(data.inputs || {}).filter(k => data.inputs[k]).length > 0 && (
-        <div className="text-xs text-gray-500 mt-1">
-          {Object.keys(data.inputs).filter(k => data.inputs[k]).length} input(s) configured
+        <div className="text-[10px] text-dark-400 mt-1">
+          {Object.keys(data.inputs).filter(k => data.inputs[k]).length} input(s)
         </div>
       )}
 
       {condition && (
-        <div className="text-xs text-yellow-400 mt-2 flex items-center gap-1">
-          <span>⚠️</span>
+        <div className="text-[10px] text-amber-400/80 mt-1.5 flex items-center gap-1">
+          <span>⚡</span>
           <span>Conditional</span>
         </div>
       )}
 
       {!isConfigured && (
-        <div className="text-xs text-gray-600 mt-1 italic">Click to configure</div>
+        <div className="text-[10px] text-dark-500 mt-1 italic">Click to configure</div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="w-3 h-3" style={{ background: agent.color }} />
+      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid rgba(0,0,0,0.3)' }} />
     </div>
   )
 })

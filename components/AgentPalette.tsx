@@ -129,28 +129,28 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
   }
 
   return (
-    <div className="w-80 bg-dark-800 border-r border-dark-700 p-4 overflow-y-auto">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-white text-xl font-bold">Agents</h2>
+    <div className="w-80 bg-dark-900/95 backdrop-blur-xl border-r border-white/[0.06] p-4 overflow-y-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white text-base font-semibold tracking-tight">Agents</h2>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs rounded-lg transition flex items-center gap-1"
+          className="px-3 py-1.5 bg-primary-600/90 hover:bg-primary-500 text-white text-[11px] rounded-lg transition flex items-center gap-1 font-medium"
         >
           + Create
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-3 bg-dark-900 rounded-lg p-0.5">
+      <div className="flex gap-0.5 mb-4 bg-dark-800/60 rounded-xl p-0.5 border border-white/[0.04]">
         <button
           onClick={() => setActiveTab('agents')}
-          className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${activeTab === 'agents' ? 'bg-dark-700 text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition ${activeTab === 'agents' ? 'bg-dark-700/80 text-white shadow-sm' : 'text-dark-400 hover:text-white'}`}
         >
           My Agents
         </button>
         <button
           onClick={() => setActiveTab('templates')}
-          className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${activeTab === 'templates' ? 'bg-dark-700 text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition ${activeTab === 'templates' ? 'bg-dark-700/80 text-white shadow-sm' : 'text-dark-400 hover:text-white'}`}
         >
           📦 Templates
         </button>
@@ -161,8 +161,8 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
           {/* Custom Agents */}
           {customAgents.length > 0 && (
             <>
-              <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Your Agents</h3>
-              <div className="space-y-2 mb-4">
+              <p className="section-label mb-2">Your Agents</p>
+              <div className="space-y-1.5 mb-4">
                 {customAgents.map((agent) => (
                   <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} onDelete={onDeleteAgent} />
                 ))}
@@ -171,19 +171,19 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
           )}
 
           {/* System Agents */}
-          <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">
+          <p className="section-label mb-2">
             {customAgents.length > 0 ? 'Built-in (Code)' : 'Built-in Agents'}
-          </h3>
-          <div className="space-y-2 mb-4">
+          </p>
+          <div className="space-y-1.5 mb-4">
             {systemAgents.map((agent) => (
               <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} />
             ))}
           </div>
 
           {customAgents.length === 0 && (
-            <div className="mt-4 p-4 bg-dark-700 rounded-lg border border-dark-600">
-              <h4 className="text-white text-sm font-bold mb-2">💡 Quick Tip</h4>
-              <p className="text-gray-400 text-xs">
+            <div className="mt-4 p-3.5 glass-card">
+              <h4 className="text-white text-xs font-semibold mb-1.5">💡 Quick Tip</h4>
+              <p className="text-dark-400 text-[11px] leading-relaxed">
                 Click &quot;+ Create&quot; to build custom agents, or browse <button onClick={() => setActiveTab('templates')} className="text-primary-400 hover:underline">Templates</button> for ready-made agents.
               </p>
             </div>
@@ -194,29 +194,31 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
         <div className="space-y-4">
           {TEMPLATE_DOMAINS.map(domain => (
             <div key={domain}>
-              <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">{domain}</h3>
+              <p className="section-label mb-2">{domain}</p>
               <div className="space-y-1.5">
                 {AGENT_TEMPLATES.filter(t => t.domain === domain).map(template => {
                   const alreadyAdded = existingIds.has(template.name.toLowerCase())
                   return (
                     <div
                       key={template.name}
-                      className="p-2.5 rounded-lg border border-dark-600 hover:border-dark-500 transition"
-                      style={{ backgroundColor: template.color + '08' }}
+                      className="p-2.5 rounded-xl border border-white/[0.04] hover:border-white/[0.08] transition-all"
+                      style={{ backgroundColor: template.color + '06' }}
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{template.icon}</span>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ background: template.color + '15' }}>
+                          {template.icon}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-white text-sm font-medium">{template.name}</div>
-                          <div className="text-gray-400 text-[11px] mt-0.5 truncate">{template.description}</div>
+                          <div className="text-white text-xs font-medium">{template.name}</div>
+                          <div className="text-dark-400 text-[10px] mt-0.5 truncate">{template.description}</div>
                         </div>
                         <button
                           onClick={() => !alreadyAdded && installTemplate(template)}
                           disabled={alreadyAdded}
-                          className={`px-2 py-1 text-[11px] rounded-md font-medium transition whitespace-nowrap ${
+                          className={`px-2 py-1 text-[10px] rounded-lg font-medium transition whitespace-nowrap ${
                             alreadyAdded
-                              ? 'bg-dark-600 text-gray-500 cursor-default'
-                              : 'bg-primary-600/20 text-primary-400 hover:bg-primary-600/40'
+                              ? 'bg-dark-800/60 text-dark-500 cursor-default'
+                              : 'bg-primary-600/15 text-primary-400 hover:bg-primary-600/25'
                           }`}
                         >
                           {alreadyAdded ? '✓ Added' : '+ Add'}
@@ -245,28 +247,26 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
 function AgentButton({ agent, onAdd, onDelete }: { agent: Agent; onAdd: (a: Agent) => void; onDelete?: (id: string) => void }) {
   return (
     <div
-      className="w-full p-3 rounded-lg text-left hover:bg-dark-700 transition group cursor-pointer"
-      style={{
-        backgroundColor: agent.color + '10',
-        borderLeft: `4px solid ${agent.color}`,
-      }}
+      className="w-full p-2.5 rounded-xl text-left hover:bg-white/[0.03] transition-all group cursor-pointer border border-transparent hover:border-white/[0.06]"
       onClick={() => onAdd(agent)}
     >
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{agent.icon}</span>
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: agent.color + '15' }}>
+          {agent.icon}
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="text-white text-sm font-medium flex items-center gap-1.5">
+          <div className="text-white text-xs font-medium flex items-center gap-1.5">
             {agent.name}
             {agent.category === 'custom' && (
-              <span className="text-[10px] bg-primary-600/30 text-primary-400 px-1.5 py-0.5 rounded">custom</span>
+              <span className="text-[9px] bg-primary-600/20 text-primary-400 px-1.5 py-0.5 rounded-md">custom</span>
             )}
           </div>
-          <div className="text-gray-400 text-xs mt-0.5 truncate">{agent.description}</div>
+          <div className="text-dark-400 text-[10px] mt-0.5 truncate">{agent.description}</div>
         </div>
         {agent.category === 'custom' && onDelete && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(agent.id) }}
-            className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 text-xs transition p-1"
+            className="opacity-0 group-hover:opacity-100 text-dark-500 hover:text-red-400 text-xs transition p-1"
             title="Delete agent"
           >🗑️</button>
         )}
@@ -315,23 +315,23 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-dark-800 border border-dark-600 rounded-xl w-[520px] max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-dark-700 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Create Custom Agent</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-lg">✕</button>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-dark-900 border border-white/[0.08] rounded-2xl w-[520px] max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Create Custom Agent</h2>
+          <button onClick={onClose} className="text-dark-400 hover:text-white text-lg transition">✕</button>
         </div>
 
         <div className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Agent Name *</label>
+            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Agent Name *</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Resume Screener, Contract Reviewer..."
-              className="w-full bg-dark-700 border border-dark-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
+              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition"
             />
           </div>
 
@@ -372,41 +372,41 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Description</label>
             <input
               type="text"
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="What does this agent do?"
-              className="w-full bg-dark-700 border border-dark-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
+              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition"
             />
           </div>
 
           {/* System Prompt */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              System Prompt <span className="text-gray-500 text-xs">(the agent&apos;s role & context)</span>
+            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">
+              System Prompt <span className="text-dark-500 text-[10px]">(the agent&apos;s role & context)</span>
             </label>
             <textarea
               value={systemPrompt}
               onChange={e => setSystemPrompt(e.target.value)}
               placeholder="You are an expert HR recruiter. You screen resumes against job descriptions, evaluate candidate fit, and provide structured assessments..."
               rows={4}
-              className="w-full bg-dark-700 border border-dark-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500 resize-y"
+              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 resize-y transition"
             />
           </div>
 
           {/* Actions */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Actions</label>
+            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Actions</label>
             <div className="space-y-1.5 mb-2">
               {actions.map((a, i) => (
-                <div key={a.id} className="flex items-center gap-2 bg-dark-700 px-3 py-1.5 rounded text-sm text-gray-300">
+                <div key={a.id} className="flex items-center gap-2 bg-dark-800/60 border border-white/[0.04] px-3 py-1.5 rounded-lg text-xs text-dark-300">
                   <span className="flex-1">{a.label}</span>
                   {i > 0 && (
                     <button
                       onClick={() => setActions(prev => prev.filter((_, idx) => idx !== i))}
-                      className="text-gray-500 hover:text-red-400 text-xs"
+                      className="text-dark-500 hover:text-red-400 text-xs"
                     >✕</button>
                   )}
                 </div>
@@ -419,12 +419,12 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
                 onChange={e => setNewActionLabel(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddAction()}
                 placeholder="Add action (e.g. Screen Resume)..."
-                className="flex-1 bg-dark-700 border border-dark-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500"
+                className="flex-1 bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-primary-500/50 transition"
               />
               <button
                 onClick={handleAddAction}
                 disabled={!newActionLabel.trim()}
-                className="px-3 py-1.5 bg-dark-600 hover:bg-dark-500 disabled:opacity-40 text-white text-sm rounded-lg transition"
+                className="px-3 py-2 bg-dark-700/80 hover:bg-dark-600 disabled:opacity-40 text-white text-xs rounded-xl transition"
               >
                 Add
               </button>
@@ -445,14 +445,14 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-dark-700 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white text-sm transition">
+        <div className="px-6 py-4 border-t border-white/[0.06] flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2.5 text-dark-400 hover:text-white text-xs transition">
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-dark-600 disabled:text-gray-500 text-white text-sm rounded-lg font-medium transition"
+            className="btn-primary disabled:bg-dark-700 disabled:text-dark-500 text-xs"
           >
             Create Agent
           </button>

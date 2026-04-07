@@ -68,60 +68,50 @@ const templates = [
 
 export default function TemplatesPage() {
   return (
-    <div className="min-h-screen bg-dark-900">
+    <div className="min-h-screen">
       {/* Header */}
-      <nav className="border-b border-dark-700 bg-dark-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="border-b border-white/[0.06] bg-dark-950/80 backdrop-blur-xl sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <SparklesIcon className="h-8 w-8 text-primary-500" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-purple-500 bg-clip-text text-transparent">
-                Cognify AI
-              </span>
+            <Link href="/" className="flex items-center gap-2.5">
+              <SparklesIcon className="h-7 w-7 text-primary-400" />
+              <span className="text-xl font-bold gradient-text">NavniAI</span>
             </Link>
-            <div className="flex gap-4">
-              <Link href="/dashboard" className="px-4 py-2 text-gray-300 hover:text-white transition">
-                Dashboard
-              </Link>
-              <Link href="/workflow/builder" className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg transition">
-                Open Builder
-              </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="text-sm text-dark-300 hover:text-white transition-colors">Dashboard</Link>
+              <Link href="/workflow/builder" className="btn-primary text-sm">Open Builder</Link>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Workflow Templates</h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Start with a pre-built template and customize it to fit your needs. Each template chains multiple AI agents into an automated pipeline.
+          <p className="section-label mb-3">Templates</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-3">Workflow Templates</h1>
+          <p className="text-dark-400 text-sm max-w-xl mx-auto">
+            Start with a pre-built template and customize it. Each chains multiple AI agents into an automated pipeline.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map((template) => (
-            <Link
-              key={template.id}
-              href={`/workflow/builder?template=${template.id}`}
-              className="bg-dark-800 border border-dark-700 rounded-xl p-6 hover:border-primary-600 transition group block"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-4xl">{template.icon}</span>
-                <span className="text-xs text-gray-500 bg-dark-700 px-2 py-1 rounded">{template.category}</span>
+            <Link key={template.id} href={`/workflow/builder?template=${template.id}`}
+              className="glass-card-hover p-5 group block">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-2xl">{template.icon}</span>
+                <span className="text-[10px] font-medium text-dark-400 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-full">{template.category}</span>
               </div>
-              <h3 className="text-xl font-bold mb-2 group-hover:text-primary-400 transition">{template.name}</h3>
-              <p className="text-gray-400 text-sm mb-4 leading-relaxed">{template.description}</p>
-              <div className="flex flex-wrap gap-1 mb-4">
+              <h3 className="text-sm font-semibold mb-1.5 text-white group-hover:text-primary-400 transition">{template.name}</h3>
+              <p className="text-xs text-dark-400 mb-3 leading-relaxed">{template.description}</p>
+              <div className="flex flex-wrap gap-1 mb-3">
                 {template.agents.map((agent) => (
-                  <span key={agent} className="text-xs bg-dark-700 text-gray-300 px-2 py-1 rounded">
-                    {agent}
-                  </span>
+                  <span key={agent} className="text-[10px] bg-white/[0.04] border border-white/[0.06] text-dark-300 px-2 py-0.5 rounded-lg">{agent}</span>
                 ))}
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-dark-700">
-                <span className="text-xs text-gray-500">{template.runs} uses</span>
-                <span className="text-primary-400 text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+              <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
+                <span className="text-[10px] text-dark-500">{template.runs} uses</span>
+                <span className="text-primary-400 text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
                   Use template <ArrowRightIcon className="h-3 w-3" />
                 </span>
               </div>

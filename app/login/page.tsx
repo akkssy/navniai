@@ -20,71 +20,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 relative">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary-600/[0.06] rounded-full blur-[100px]" />
+      </div>
+      <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <SparklesIcon className="h-10 w-10 text-primary-500" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-purple-500 bg-clip-text text-transparent">
-              Cognify AI
-            </span>
+            <SparklesIcon className="h-8 w-8 text-primary-400" />
+            <span className="text-2xl font-bold gradient-text">NavniAI</span>
           </Link>
-          <p className="text-gray-400 mt-2">Sign in to your account</p>
+          <p className="text-dark-400 text-sm mt-2">Sign in to your account</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-dark-800 border border-dark-700 rounded-xl p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="glass-card p-7 space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="you@example.com"
-            />
+            <label htmlFor="email" className="block text-xs font-medium text-dark-300 mb-1.5">Email</label>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500/30 transition"
+              placeholder="you@example.com" />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-xs font-medium text-dark-300 mb-1.5">Password</label>
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500/30 transition"
+              placeholder="••••••••" />
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg font-semibold transition"
-          >
+          <button type="submit" disabled={loading} className="w-full btn-primary py-2.5 text-sm disabled:opacity-50">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
 
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-center text-xs text-dark-400">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-primary-400 hover:text-primary-300 transition">
-              Sign up
-            </Link>
+            <Link href="/signup" className="text-primary-400 hover:text-primary-300 transition">Sign up</Link>
           </div>
         </form>
 
-        <div className="text-center mt-6">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-300 transition">
-            ← Back to Home
-          </Link>
+        <div className="text-center mt-5">
+          <Link href="/" className="text-xs text-dark-500 hover:text-dark-300 transition">← Back to Home</Link>
         </div>
       </div>
     </div>
