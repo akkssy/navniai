@@ -1,6 +1,8 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { useSession, signOut } from 'next-auth/react'
 import ReactFlow, {
   Node,
   Edge,
@@ -13,8 +15,10 @@ import ReactFlow, {
   BackgroundVariant,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { SparklesIcon, ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { executeWorkflowClientSide } from '../lib/workflowExecutor'
 import { loadSettings, getProviderBadge, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
+import { getTemplateById } from '../lib/pipelineTemplates'
 import { AgentNode } from './AgentNode'
 import { AgentPalette } from './AgentPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
@@ -61,7 +65,9 @@ const initialEdges: Edge[] = []
 // Use local Next.js API route (falls back to external gateway if configured)
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
-export function WorkflowBuilder() {
+export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
+  const { data: session } = useSession()
+  const template = templateId ? getTemplateById(templateId) : null
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -69,6 +75,7 @@ export function WorkflowBuilder() {
   const [runResult, setRunResult] = useState<{ status: string; message: string } | null>(null)
   const [executionOutputs, setExecutionOutputs] = useState<Record<string, { output: string; status: string; provider?: string }> | null>(null)
   const [showOutputPanel, setShowOutputPanel] = useState(false)
+  const templateLoaded = useRef(false)
   const [customAgents, setCustomAgents] = useState<Agent[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -85,6 +92,40 @@ export function WorkflowBuilder() {
       localStorage.setItem('navniai_custom_agents', JSON.stringify(customAgents))
     } catch { /* quota exceeded or SSR */ }
   }, [customAgents])
+
+  // Load template into builder
+  useEffect(() => {
+    if (!templateId || templateLoaded.current) return
+    const template = getTemplateById(templateId)
+    if (!template) return
+    templateLoaded.current = true
+
+    const templateNodes: Node[] = template.steps.map((step, i) => {
+      const agent = SYSTEM_AGENTS.find(a => a.id === step.agentId) || SYSTEM_AGENTS[0]
+      return {
+        id: `${step.agentId}-tpl-${i}`,
+        type: 'agentNode',
+        position: { x: 300, y: 80 + i * 160 },
+        data: {
+          agent,
+          action: step.action,
+          inputs: step.inputs,
+          condition: '',
+        },
+      }
+    })
+
+    const templateEdges: Edge[] = templateNodes.slice(0, -1).map((node, i) => ({
+      id: `edge-tpl-${i}`,
+      source: node.id,
+      target: templateNodes[i + 1].id,
+      animated: true,
+      style: { stroke: '#6366f1', strokeWidth: 2 },
+    }))
+
+    setNodes(templateNodes)
+    setEdges(templateEdges)
+  }, [templateId, setNodes, setEdges])
 
   const allAgents = [...SYSTEM_AGENTS, ...customAgents]
 
@@ -242,7 +283,57 @@ export function WorkflowBuilder() {
   const configuredCount = nodes.filter(n => n.data.action).length
 
   return (
-    <div className="h-screen flex bg-dark-950">
+    <div className="h-screen flex flex-col bg-dark-950">
+      {/* Top Navigation Bar */}
+      <header className="h-12 border-b border-white/[0.06] bg-dark-950/90 backdrop-blur-xl flex items-center justify-between px-4 shrink-0 z-30">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="flex items-center gap-1.5 text-dark-400 hover:text-white transition text-xs">
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
+            Dashboard
+          </Link>
+          <div className="h-4 w-px bg-white/[0.06]" />
+          <Link href="/" className="flex items-center gap-1.5">
+            <SparklesIcon className="h-4.5 w-4.5 text-primary-400" />
+            <span className="text-sm font-bold gradient-text">NavniAI</span>
+          </Link>
+          {template && (
+            <>
+              <div className="h-4 w-px bg-white/[0.06]" />
+              <span className="text-xs text-dark-300 flex items-center gap-1.5">
+                <span>{template.icon}</span>
+                {template.name}
+              </span>
+            </>
+          )}
+          {!template && (
+            <>
+              <div className="h-4 w-px bg-white/[0.06]" />
+              <span className="text-xs text-dark-400">New Workflow</span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2.5">
+          {session?.user && (
+            <span className="text-[11px] text-dark-400">
+              {session.user.name || session.user.email}
+            </span>
+          )}
+          <Link href="/settings" className="text-[11px] text-dark-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/[0.04]">
+            ⚙️ Settings
+          </Link>
+          {session?.user && (
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="text-[11px] text-dark-500 hover:text-red-400 transition px-2 py-1 rounded-lg hover:bg-white/[0.04] flex items-center gap-1"
+            >
+              <ArrowRightOnRectangleIcon className="h-3.5 w-3.5" />
+              Logout
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
       {/* Agent Palette */}
       <AgentPalette agents={allAgents} onAddAgent={addAgentNode} onCreateAgent={addCustomAgent} onDeleteAgent={deleteCustomAgent} />
 
@@ -375,6 +466,7 @@ export function WorkflowBuilder() {
           onDelete={deleteNode}
         />
       )}
+      </div>{/* end flex-1 flex overflow-hidden */}
     </div>
   )
 }

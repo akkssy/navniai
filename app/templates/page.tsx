@@ -2,69 +2,9 @@
 
 import Link from 'next/link'
 import { SparklesIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
 
-const templates = [
-  {
-    id: 'pr-review',
-    name: 'PR Review Pipeline',
-    icon: '📋',
-    color: '#8b5cf6',
-    description: 'Automated code review for pull requests. Runs security scan, code quality analysis, and posts a summary comment.',
-    agents: ['Security Scanner', 'Code Reviewer', 'DevOps Agent'],
-    runs: '12.4K',
-    category: 'Code Quality',
-  },
-  {
-    id: 'feature-dev',
-    name: 'Feature Development',
-    icon: '🚀',
-    color: '#3b82f6',
-    description: 'End-to-end feature creation: generates code, writes tests, creates documentation, and opens a PR.',
-    agents: ['Code Generator', 'Test Writer', 'Documenter', 'DevOps Agent'],
-    runs: '8.7K',
-    category: 'Development',
-  },
-  {
-    id: 'bug-fix',
-    name: 'Bug Fix Workflow',
-    icon: '🐛',
-    color: '#ef4444',
-    description: 'Analyze error logs, identify root cause, generate a fix, write regression tests, and submit for review.',
-    agents: ['Debug Helper', 'Code Generator', 'Test Writer', 'Code Reviewer'],
-    runs: '6.2K',
-    category: 'Debugging',
-  },
-  {
-    id: 'security-audit',
-    name: 'Security Audit',
-    icon: '🔒',
-    color: '#ec4899',
-    description: 'Comprehensive security scan: vulnerability detection, dependency audit, and remediation suggestions.',
-    agents: ['Security Scanner', 'Code Reviewer', 'Refactor Agent'],
-    runs: '4.1K',
-    category: 'Security',
-  },
-  {
-    id: 'code-refactor',
-    name: 'Code Refactoring',
-    icon: '🔄',
-    color: '#06b6d4',
-    description: 'Analyze code quality, identify tech debt, refactor for readability and performance, then verify with tests.',
-    agents: ['Code Reviewer', 'Refactor Agent', 'Test Writer'],
-    runs: '3.8K',
-    category: 'Code Quality',
-  },
-  {
-    id: 'api-docs',
-    name: 'API Documentation',
-    icon: '📚',
-    color: '#f59e0b',
-    description: 'Auto-generate comprehensive API docs from your codebase, including examples and schemas.',
-    agents: ['Documenter', 'Code Reviewer'],
-    runs: '2.9K',
-    category: 'Documentation',
-  },
-]
+const templates = PIPELINE_TEMPLATES
 
 export default function TemplatesPage() {
   return (
@@ -105,12 +45,17 @@ export default function TemplatesPage() {
               <h3 className="text-sm font-semibold mb-1.5 text-white group-hover:text-primary-400 transition">{template.name}</h3>
               <p className="text-xs text-dark-400 mb-3 leading-relaxed">{template.description}</p>
               <div className="flex flex-wrap gap-1 mb-3">
-                {template.agents.map((agent) => (
-                  <span key={agent} className="text-[10px] bg-white/[0.04] border border-white/[0.06] text-dark-300 px-2 py-0.5 rounded-lg">{agent}</span>
-                ))}
+                {template.steps.map((step, i) => {
+                  const agent = getAgentForStep(step)
+                  return (
+                    <span key={step.agentId + i} className="text-[10px] bg-white/[0.04] border border-white/[0.06] text-dark-300 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                      <span>{agent?.icon || '⚙️'}</span>{step.label}
+                    </span>
+                  )
+                })}
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
-                <span className="text-[10px] text-dark-500">{template.runs} uses</span>
+                <span className="text-[10px] text-dark-500">{template.runs.toLocaleString()} runs • {template.steps.length} steps</span>
                 <span className="text-primary-400 text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
                   Use template <ArrowRightIcon className="h-3 w-3" />
                 </span>

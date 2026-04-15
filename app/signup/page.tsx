@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 
@@ -9,15 +11,47 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // TODO: Connect to API Gateway auth endpoint
-    setTimeout(() => {
+    setError('')
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong')
+        setLoading(false)
+        return
+      }
+
+      // Auto sign in after registration
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Account created but sign-in failed. Please log in.')
+        setLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+    } catch {
+      setError('Network error. Please try again.')
       setLoading(false)
-      alert('Signup API not yet connected. Coming soon!')
-    }, 1000)
+    }
   }
 
   return (
@@ -37,6 +71,11 @@ export default function SignupPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="glass-card p-7 space-y-4">
+          {error && (
+            <div className="px-3.5 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+              {error}
+            </div>
+          )}
           <div>
             <label htmlFor="name" className="block text-xs font-medium text-dark-300 mb-1.5">Full Name</label>
             <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required

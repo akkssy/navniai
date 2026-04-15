@@ -1,16 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { PlusIcon, PlayIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon } from '@heroicons/react/24/outline'
+import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
 
 export default function Dashboard() {
-  const [workflows] = useState([
-    { id: '1', name: 'PR Review Pipeline', status: 'active', runs: 45, lastRun: '2 hours ago' },
-    { id: '2', name: 'Feature Development', status: 'draft', runs: 12, lastRun: '1 day ago' },
-    { id: '3', name: 'Bug Fix Workflow', status: 'active', runs: 78, lastRun: '30 minutes ago' },
-  ])
+  const { data: session } = useSession()
+  const workflows = PIPELINE_TEMPLATES
 
   return (
     <div className="min-h-screen">
@@ -26,6 +24,11 @@ export default function Dashboard() {
               <h1 className="text-sm font-medium text-dark-400">Dashboard</h1>
             </div>
             <div className="flex items-center gap-2.5">
+              {session?.user && (
+                <span className="text-xs text-dark-400 mr-1">
+                  {session.user.name || session.user.email}
+                </span>
+              )}
               <Link href="/settings" className="btn-secondary text-xs px-3.5 py-2">
                 ⚙️ LLM Settings
               </Link>
@@ -33,6 +36,13 @@ export default function Dashboard() {
                 <PlusIcon className="h-4 w-4" />
                 New Workflow
               </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 text-red-400 hover:text-red-300"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -41,10 +51,10 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Workflows" value="12" accent="text-primary-400" />
-          <StatCard label="Active" value="8" accent="text-emerald-400" />
-          <StatCard label="Total Runs" value="1,234" accent="text-amber-400" />
-          <StatCard label="Success Rate" value="94%" accent="text-accent-400" />
+          <StatCard label="Total Pipelines" value={String(workflows.length)} accent="text-primary-400" />
+          <StatCard label="Active" value={String(workflows.filter(w => w.status === 'active').length)} accent="text-emerald-400" />
+          <StatCard label="Total Runs" value={String(workflows.reduce((s, w) => s + w.runs, 0).toLocaleString())} accent="text-amber-400" />
+          <StatCard label="Agents Used" value={String(new Set(workflows.flatMap(w => w.steps.map(s => s.agentId))).size)} accent="text-accent-400" />
         </div>
 
         {/* Workflows List */}
@@ -80,15 +90,19 @@ function StatCard({ label, value, accent }: { label: string, value: string, acce
 }
 
 function WorkflowRow({ workflow }: { workflow: any }) {
+  const stepAgents = workflow.steps.map((s: any) => ({ ...s, agent: getAgentForStep(s) }))
   return (
-    <div className="px-6 py-4 hover:bg-white/[0.02] transition-colors">
-      <div className="flex items-center justify-between">
+    <div className="px-6 py-5 hover:bg-white/[0.02] transition-colors">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2.5">
+            <span className="text-lg">{workflow.icon}</span>
             <h3 className="text-sm font-semibold text-white">{workflow.name}</h3>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
               workflow.status === 'active'
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : workflow.status === 'popular'
+                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'bg-white/[0.04] text-dark-400 border border-white/[0.06]'
             }`}>
               {workflow.status}
@@ -96,21 +110,43 @@ function WorkflowRow({ workflow }: { workflow: any }) {
           </div>
           <div className="flex items-center gap-4 mt-1.5 text-xs text-dark-400">
             <span className="flex items-center gap-1">
-              <PlayIcon className="h-3.5 w-3.5" />
-              {workflow.runs} runs
-            </span>
-            <span className="flex items-center gap-1">
               <ClockIcon className="h-3.5 w-3.5" />
-              {workflow.lastRun}
+              Last run: {workflow.lastRun}
             </span>
+            <span>{workflow.runs} total runs</span>
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="btn-primary text-xs px-3.5 py-1.5">Run</button>
-          <Link href={`/workflow/${workflow.id}`} className="btn-secondary text-xs px-3.5 py-1.5">
-            Edit
+          <Link href={`/workflow/${workflow.id}`} className="btn-secondary text-xs px-3.5 py-1.5 flex items-center gap-1.5">
+            ✏️ Edit
+          </Link>
+          <Link href={`/workflow/builder?template=${workflow.id}`} className="btn-primary text-xs px-3.5 py-1.5 flex items-center gap-1.5">
+            <PlayIcon className="h-3.5 w-3.5" />
+            Run Now
           </Link>
         </div>
+      </div>
+
+      {/* Pipeline Steps */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {stepAgents.map((step: any, i: number) => (
+          <div key={step.agentId + i} className="flex items-center gap-2 shrink-0">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border"
+              style={{
+                backgroundColor: (step.agent?.color || '#6366f1') + '12',
+                borderColor: (step.agent?.color || '#6366f1') + '25',
+                color: step.agent?.color || '#a5b4fc',
+              }}
+            >
+              <span>{step.agent?.icon || '⚙️'}</span>
+              {step.label}
+            </div>
+            {i < stepAgents.length - 1 && (
+              <span className="text-dark-600 text-xs">→</span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )
