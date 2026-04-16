@@ -33,7 +33,7 @@ export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => 
 
   return (
     <div
-      className={`px-4 py-3 rounded-md min-w-[220px] bg-white cursor-pointer transition-all duration-200 border ${
+      className={`px-4 py-3 rounded-md min-w-[220px] bg-card cursor-pointer transition-all duration-200 border ${
         selected
           ? 'border-accent-300 scale-[1.03]'
           : 'border-surface-300 hover:border-surface-400'
@@ -44,7 +44,7 @@ export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => 
           : `0 1px 4px rgba(0,0,0,0.06)`,
       }}
     >
-      <Handle type="target" position={Position.Top} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid white' }} />
+      <Handle type="target" position={Position.Top} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid rgb(var(--card))' }} />
 
       <div className="flex items-center gap-2.5 mb-2">
         <div className="w-8 h-8 rounded-md flex items-center justify-center text-lg" style={{ background: agent.color + '18' }}>
@@ -75,7 +75,7 @@ export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => 
         <div className="text-[10px] text-ink-300 mt-1 italic">Click to configure</div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid white' }} />
+      <Handle type="source" position={Position.Bottom} className="w-2.5 h-2.5" style={{ background: agent.color, border: '2px solid rgb(var(--card))' }} />
     </div>
   )
 })

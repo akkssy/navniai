@@ -3,6 +3,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
+import ThemeToggle from '@/components/ThemeToggle'
 import ReactFlow, {
   Node,
   Edge,
@@ -285,7 +286,7 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
   return (
     <div className="h-screen flex flex-col bg-surface">
       {/* Top Navigation Bar */}
-      <header className="h-12 border-b border-surface-300 bg-white/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-30">
+      <header className="h-12 border-b border-surface-300 bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-30">
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="flex items-center gap-1.5 text-ink-400 hover:text-ink-700 transition text-xs">
             <ArrowLeftIcon className="h-3.5 w-3.5" />
@@ -318,6 +319,7 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
               {session.user.name || session.user.email}
             </span>
           )}
+          <ThemeToggle />
           <Link href="/settings" className="text-[11px] text-ink-400 hover:text-ink-700 transition px-2 py-1 rounded-md hover:bg-surface-100">
             ⚙️ Settings
           </Link>
@@ -354,7 +356,7 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
           className="bg-surface"
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(0,0,0,0.06)" />
-          <Controls className="bg-white/80 backdrop-blur-sm border border-surface-300 rounded-md" />
+          <Controls className="bg-card/80 backdrop-blur-sm border border-surface-300 rounded-md" />
         </ReactFlow>
 
         {/* Toolbar */}
@@ -413,11 +415,11 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
 
       {/* Output Panel */}
       {showOutputPanel && executionOutputs && (
-        <div className="h-1/2 border-t border-surface-300 bg-white/95 backdrop-blur-sm flex flex-col">
+        <div className="h-1/2 border-t border-surface-300 bg-card/95 backdrop-blur-sm flex flex-col">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-300">
             <h3 className="text-xs font-semibold text-ink-700 flex items-center gap-2">
               📋 Execution Output
-              <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
                 {Object.keys(executionOutputs).length} step(s)
               </span>
             </h3>
@@ -443,7 +445,7 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
                       return <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bgClass} ${badge.textClass}`}>{badge.label}</span>
                     })()}
                     <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-md ${
-                      stepResult.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                      stepResult.status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-950 text-red-500 dark:text-red-400'
                     }`}>{stepResult.status}</span>
                   </div>
                   <pre className="p-4 text-xs text-ink-500 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">

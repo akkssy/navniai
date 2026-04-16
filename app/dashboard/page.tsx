@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function Dashboard() {
   const { data: session } = useSession()
@@ -13,7 +14,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+      <header className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-3.5">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-6">
@@ -29,6 +30,7 @@ export default function Dashboard() {
                   {session.user.name || session.user.email}
                 </span>
               )}
+              <ThemeToggle />
               <Link href="/knowledge" className="btn-secondary text-xs px-3.5 py-2">
                 🧠 Knowledge
               </Link>
@@ -104,9 +106,9 @@ function WorkflowRow({ workflow }: { workflow: any }) {
             <h3 className="text-sm font-semibold text-ink-700">{workflow.name}</h3>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
               workflow.status === 'active'
-                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                 : workflow.status === 'popular'
-                ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
                 : 'bg-surface-100 text-ink-400 border border-surface-300'
             }`}>
               {workflow.status}

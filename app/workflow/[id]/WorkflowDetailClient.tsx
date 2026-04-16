@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { SparklesIcon, PlayIcon, PencilSquareIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { getTemplateById, getAgentForStep } from '@/lib/pipelineTemplates'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function WorkflowDetailClient({ params }: { params: { id: string } }) {
   const { id } = params
@@ -25,14 +26,17 @@ export default function WorkflowDetailClient({ params }: { params: { id: string 
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <nav className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+      <nav className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-14">
             <Link href="/" className="flex items-center gap-2">
               <SparklesIcon className="h-6 w-6 text-accent-500" />
               <span className="text-lg font-bold text-ink-700">NavniAI</span>
             </Link>
-            <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition">← Dashboard</Link>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition">← Dashboard</Link>
+            </div>
           </div>
         </div>
       </nav>

@@ -2,7 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles — Calm Intelligence */
+/* ─── Theme Variables ─── */
+:root {
+  /* Surface — warm cream (light) */
+  --surface-50: 250 249 247;
+  --surface-100: 247 246 242;
+  --surface-200: 238 237 234;
+  --surface-300: 226 224 220;
+  --surface-400: 209 207 201;
+  /* Ink — deep charcoal text */
+  --ink-50: 245 245 245;
+  --ink-100: 224 224 224;
+  --ink-200: 179 179 179;
+  --ink-300: 138 138 138;
+  --ink-400: 102 102 102;
+  --ink-500: 74 74 74;
+  --ink-600: 51 51 51;
+  --ink-700: 26 26 26;
+  /* Accent — brand blue */
+  --accent-50: 239 246 255;
+  --accent-100: 219 234 254;
+  --accent-200: 191 219 254;
+  --accent-300: 123 181 249;
+  --accent-400: 74 154 245;
+  --accent-500: 47 111 237;
+  --accent-600: 29 91 214;
+  --accent-700: 26 77 179;
+  /* Card surface (white in light) */
+  --card: 255 255 255;
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(0,0,0,0.1);
+  --scrollbar-thumb-hover: rgba(0,0,0,0.18);
+}
+
+.dark {
+  /* Surface — premium charcoal */
+  --surface-50: 22 22 28;
+  --surface-100: 14 14 18;
+  --surface-200: 28 28 34;
+  --surface-300: 44 44 52;
+  --surface-400: 62 62 72;
+  /* Ink — light text on dark bg */
+  --ink-50: 20 20 22;
+  --ink-100: 38 38 42;
+  --ink-200: 100 100 108;
+  --ink-300: 140 140 150;
+  --ink-400: 170 170 178;
+  --ink-500: 195 195 200;
+  --ink-600: 220 220 224;
+  --ink-700: 242 242 244;
+  /* Accent — slightly brighter for dark bg */
+  --accent-50: 15 25 50;
+  --accent-100: 20 38 72;
+  --accent-200: 28 58 115;
+  --accent-300: 90 155 240;
+  --accent-400: 80 148 248;
+  --accent-500: 65 135 248;
+  --accent-600: 85 155 252;
+  --accent-700: 110 175 255;
+  /* Card surface (dark card) */
+  --card: 22 22 28;
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(255,255,255,0.1);
+  --scrollbar-thumb-hover: rgba(255,255,255,0.18);
+}
+
+/* ─── Base ─── */
 body {
   @apply bg-surface-100 text-ink-700 antialiased;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -15,9 +80,9 @@ body {
 }
 
 @layer components {
-  /* Surface card — light, minimal, sharp edges */
+  /* Surface card */
   .glass-card {
-    @apply bg-white border border-surface-300 rounded-md;
+    @apply bg-card border border-surface-300 rounded-md;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   }
   .glass-card-hover {
@@ -29,7 +94,7 @@ body {
     transform: translateY(-1px);
   }
 
-  /* Primary button — accent blue, minimal */
+  /* Primary button */
   .btn-primary {
     @apply px-5 py-2.5 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-all duration-200;
     box-shadow: 0 1px 2px rgba(47,111,237,0.2);
@@ -41,15 +106,15 @@ body {
 
   /* Secondary button */
   .btn-secondary {
-    @apply px-5 py-2.5 bg-white hover:bg-surface-200 text-ink-600 border border-surface-300 hover:border-surface-400 rounded-md font-medium transition-all duration-200;
+    @apply px-5 py-2.5 bg-card hover:bg-surface-200 text-ink-600 border border-surface-300 hover:border-surface-400 rounded-md font-medium transition-all duration-200;
   }
 
-  /* Gradient text — accent color for brand */
+  /* Gradient text */
   .gradient-text {
     @apply text-accent-500;
   }
 
-  /* Section label — editorial uppercase */
+  /* Section label */
   .section-label {
     @apply text-[11px] font-semibold uppercase tracking-widest text-ink-300;
   }
@@ -60,7 +125,7 @@ body {
   }
 }
 
-/* Custom scrollbar — light theme */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -71,12 +136,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.18);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* React Flow custom styles */

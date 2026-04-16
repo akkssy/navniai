@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ThemeToggle from '@/components/ThemeToggle'
 import {
   PROVIDER_REGISTRY, ALL_PROVIDER_KEYS, loadSettings, saveSettings,
   type LLMProviderKey, type LLMSettings,
@@ -41,10 +42,13 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-lg font-semibold tracking-tight text-ink-700">LLM Settings</h1>
-          <Link href="/dashboard" className="text-ink-400 hover:text-ink-700 text-sm transition">← Dashboard</Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link href="/dashboard" className="text-ink-400 hover:text-ink-700 text-sm transition">← Dashboard</Link>
+          </div>
         </div>
       </header>
 

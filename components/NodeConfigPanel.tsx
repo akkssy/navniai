@@ -122,7 +122,7 @@ export function NodeConfigPanel({ node, onClose, onUpdate, onDelete }: NodeConfi
   }
 
   return (
-    <div className="w-96 bg-white border-l border-surface-300 p-5 overflow-y-auto flex flex-col h-full">
+    <div className="w-96 bg-card border-l border-surface-300 p-5 overflow-y-auto flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { SparklesIcon, ArrowUpTrayIcon, TrashIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import ThemeToggle from '@/components/ThemeToggle'
 
 interface Document {
   id: string; name: string; type: string; size: number
@@ -101,7 +102,7 @@ export default function KnowledgeBasePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <nav className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+      <nav className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2.5">
@@ -109,6 +110,7 @@ export default function KnowledgeBasePage() {
               <span className="text-xl font-bold text-ink-700">NavniAI</span>
             </Link>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition-colors">Dashboard</Link>
               <Link href="/settings" className="text-sm text-ink-400 hover:text-ink-700 transition-colors">Settings</Link>
             </div>

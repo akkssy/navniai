@@ -129,7 +129,7 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
   }
 
   return (
-    <div className="w-80 bg-white border-r border-surface-300 p-4 overflow-y-auto">
+    <div className="w-80 bg-card border-r border-surface-300 p-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-ink-700 text-base font-semibold tracking-tight">Agents</h2>
         <button
@@ -144,13 +144,13 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
       <div className="flex gap-0.5 mb-4 bg-surface-100 rounded-md p-0.5 border border-surface-300">
         <button
           onClick={() => setActiveTab('agents')}
-          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'agents' ? 'bg-white text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'agents' ? 'bg-card text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
         >
           My Agents
         </button>
         <button
           onClick={() => setActiveTab('templates')}
-          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'templates' ? 'bg-white text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'templates' ? 'bg-card text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
         >
           📦 Templates
         </button>
@@ -316,7 +316,7 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white border border-surface-300 rounded-md w-[520px] max-h-[85vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-surface-300 rounded-md w-[520px] max-h-[85vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-surface-300 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink-700">Create Custom Agent</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700 text-lg transition">✕</button>

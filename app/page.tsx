@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { ArrowRightIcon, SparklesIcon, BoltIcon, UserGroupIcon, PuzzlePieceIcon } from '@heroicons/react/24/outline'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+      <nav className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2.5">
@@ -15,6 +16,7 @@ export default function Home() {
               <span className="text-xl font-bold text-ink-700">NavniAI</span>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Link href="/login" className="px-4 py-2 text-sm text-ink-400 hover:text-ink-700 transition-colors">
                 Sign in
               </Link>
