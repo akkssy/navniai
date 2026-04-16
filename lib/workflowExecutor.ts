@@ -18,6 +18,10 @@ interface WorkflowPayload {
   workflow: { name: string; version: string; steps: WorkflowStep[] }
   inputs: Record<string, any>
   user_id: string
+  useRAG?: boolean           // Enable RAG context injection
+  ragTopK?: number           // Number of chunks to retrieve (default: 5)
+  embeddingProvider?: 'ollama' | 'gemini'
+  ollamaBaseUrl?: string
 }
 
 const SYSTEM_AGENT_PROMPTS: Record<string, string> = {
@@ -38,6 +42,31 @@ function getSimulatedOutput(step: WorkflowStep): string {
   }
   const actionLabel = step.action_label || step.action
   return 'Step ' + step.id + ' (' + step.agent + '/' + actionLabel + ') completed (simulated).\n\n> Connect Ollama for real AI output.'
+}
+
+// ─── RAG Context Retrieval ───
+async function fetchRAGContext(
+  query: string,
+  topK: number,
+  embeddingProvider?: string,
+  ollamaBaseUrl?: string
+): Promise<string> {
+  try {
+    const res = await fetch('/api/rag/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, topK, embeddingProvider, ollamaBaseUrl }),
+    })
+    const data = await res.json()
+    if (!data.ok || !data.results?.length) return ''
+    return '\n\n--- KNOWLEDGE BASE CONTEXT ---\n' +
+      data.results.map((r: any, i: number) =>
+        `[Source: ${r.documentName} | Chunk #${r.chunkIndex + 1} | ${(r.similarity * 100).toFixed(0)}% match]\n${r.content}`
+      ).join('\n\n') +
+      '\n--- END CONTEXT ---\n'
+  } catch {
+    return ''
+  }
 }
 
 export async function executeWorkflowClientSide(payload: WorkflowPayload) {
@@ -72,6 +101,22 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload) {
           parts.push(k + ': ' + r)
         }
       }
+
+      // RAG context injection (if enabled)
+      if (payload.useRAG) {
+        const taskText = parts.join(' ')
+        const ragContext = await fetchRAGContext(
+          taskText,
+          payload.ragTopK || 5,
+          payload.embeddingProvider,
+          payload.ollamaBaseUrl
+        )
+        if (ragContext) {
+          parts.push(ragContext)
+          parts.push('Use the KNOWLEDGE BASE CONTEXT above to inform your response when relevant.')
+        }
+      }
+
       // Use multi-provider fallback from shared module
       const result = await callLLMWithFallback(sys, parts.join('\n\n'), loadSettings(), 60000)
       output = result.text

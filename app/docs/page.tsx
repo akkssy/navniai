@@ -52,15 +52,15 @@ export default function DocsPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <nav className="border-b border-white/[0.06] bg-dark-950/80 backdrop-blur-xl sticky top-0 z-20">
+      <nav className="border-b border-surface-300 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2.5">
-              <SparklesIcon className="h-7 w-7 text-primary-400" />
-              <span className="text-xl font-bold gradient-text">NavniAI</span>
+              <SparklesIcon className="h-7 w-7 text-accent-500" />
+              <span className="text-xl font-bold text-ink-700">NavniAI</span>
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/dashboard" className="text-sm text-dark-300 hover:text-white transition-colors">Dashboard</Link>
+              <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition-colors">Dashboard</Link>
               <Link href="/workflow/builder" className="btn-primary text-sm">Open Builder</Link>
             </div>
           </div>
@@ -69,24 +69,24 @@ export default function DocsPage() {
 
       <div className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
         <div className="flex items-center gap-3 mb-10">
-          <BookOpenIcon className="h-8 w-8 text-primary-400" />
+          <BookOpenIcon className="h-8 w-8 text-accent-500" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Documentation</h1>
-            <p className="text-dark-400 text-sm mt-0.5">Learn how to build automated workflows with NavniAI</p>
+            <h1 className="heading-serif text-2xl font-bold tracking-tight text-ink-700">Documentation</h1>
+            <p className="text-ink-400 text-sm mt-0.5">Learn how to build automated workflows with NavniAI</p>
           </div>
         </div>
 
         <div className="space-y-10">
           {sections.map((section) => (
             <div key={section.title}>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-ink-700">
                 <span>{section.icon}</span> {section.title}
               </h2>
               <div className="grid md:grid-cols-2 gap-3">
                 {section.items.map((item) => (
                   <div key={item.name} className="glass-card-hover p-4 cursor-pointer">
-                    <h3 className="text-sm font-semibold text-white mb-0.5">{item.name}</h3>
-                    <p className="text-xs text-dark-400">{item.desc}</p>
+                    <h3 className="text-sm font-semibold text-ink-700 mb-0.5">{item.name}</h3>
+                    <p className="text-xs text-ink-400">{item.desc}</p>
                   </div>
                 ))}
               </div>
@@ -95,9 +95,9 @@ export default function DocsPage() {
         </div>
 
         <div className="mt-12 glass-card p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-600/[0.04] to-accent-500/[0.04]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-accent-500/[0.04] to-accent-400/[0.04]" />
           <div className="relative">
-            <p className="text-dark-400 text-sm mb-4">Ready to build your first workflow?</p>
+            <p className="text-ink-400 text-sm mb-4">Ready to build your first workflow?</p>
             <Link href="/workflow/builder" className="btn-primary inline-flex items-center gap-2">
               Open Workflow Builder →
             </Link>

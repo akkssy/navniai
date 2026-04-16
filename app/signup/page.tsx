@@ -55,63 +55,60 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-accent-500/[0.06] rounded-full blur-[100px]" />
-      </div>
-      <div className="w-full max-w-sm relative z-10">
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <SparklesIcon className="h-8 w-8 text-primary-400" />
-            <span className="text-2xl font-bold gradient-text">NavniAI</span>
+            <SparklesIcon className="h-8 w-8 text-accent-500" />
+            <span className="text-2xl font-bold text-ink-700">NavniAI</span>
           </Link>
-          <p className="text-dark-400 text-sm mt-2">Create your free account</p>
+          <p className="text-ink-400 text-sm mt-2">Create your free account</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="glass-card p-7 space-y-4">
           {error && (
-            <div className="px-3.5 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+            <div className="px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
               {error}
             </div>
           )}
           <div>
-            <label htmlFor="name" className="block text-xs font-medium text-dark-300 mb-1.5">Full Name</label>
+            <label htmlFor="name" className="block text-xs font-medium text-ink-500 mb-1.5">Full Name</label>
             <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required
-              className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500/30 transition"
+              className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-300 rounded-md text-sm text-ink-700 placeholder-ink-300 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
               placeholder="John Doe" />
           </div>
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-dark-300 mb-1.5">Email</label>
+            <label htmlFor="email" className="block text-xs font-medium text-ink-500 mb-1.5">Email</label>
             <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500/30 transition"
+              className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-300 rounded-md text-sm text-ink-700 placeholder-ink-300 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
               placeholder="you@example.com" />
           </div>
           <div>
-            <label htmlFor="password" className="block text-xs font-medium text-dark-300 mb-1.5">Password</label>
+            <label htmlFor="password" className="block text-xs font-medium text-ink-500 mb-1.5">Password</label>
             <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8}
-              className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500/30 transition"
+              className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-300 rounded-md text-sm text-ink-700 placeholder-ink-300 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
               placeholder="••••••••" />
-            <p className="text-[10px] text-dark-500 mt-1">Must be at least 8 characters</p>
+            <p className="text-[10px] text-ink-300 mt-1">Must be at least 8 characters</p>
           </div>
 
           <button type="submit" disabled={loading} className="w-full btn-primary py-2.5 text-sm disabled:opacity-50">
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
 
-          <p className="text-center text-[10px] text-dark-500">
+          <p className="text-center text-[10px] text-ink-300">
             By signing up, you agree to our Terms of Service and Privacy Policy.
           </p>
 
-          <div className="text-center text-xs text-dark-400">
+          <div className="text-center text-xs text-ink-400">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary-400 hover:text-primary-300 transition">Sign in</Link>
+            <Link href="/login" className="text-accent-500 hover:text-accent-600 transition">Sign in</Link>
           </div>
         </form>
 
         <div className="text-center mt-5">
-          <Link href="/" className="text-xs text-dark-500 hover:text-dark-300 transition">← Back to Home</Link>
+          <Link href="/" className="text-xs text-ink-300 hover:text-ink-500 transition">← Back to Home</Link>
         </div>
       </div>
     </div>

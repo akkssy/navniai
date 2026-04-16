@@ -8,43 +8,75 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+        surface: {
+          50: '#faf9f7',
+          100: '#f7f6f2',
+          200: '#eeedea',
+          300: '#e2e0dc',
+          400: '#d1cfc9',
+        },
+        ink: {
+          50: '#f5f5f5',
+          100: '#e0e0e0',
+          200: '#b3b3b3',
+          300: '#8a8a8a',
+          400: '#666666',
+          500: '#4a4a4a',
+          600: '#333333',
+          700: '#1a1a1a',
         },
         accent: {
-          400: '#c084fc',
-          500: '#a855f7',
-          600: '#9333ea',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#7bb5f9',
+          400: '#4a9af5',
+          500: '#2f6fed',
+          600: '#1d5bd6',
+          700: '#1a4db3',
+        },
+        // Keep backward-compat aliases for components not yet migrated
+        primary: {
+          300: '#7bb5f9',
+          400: '#4a9af5',
+          500: '#2f6fed',
+          600: '#1d5bd6',
         },
         dark: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#3f4553',
-          700: '#2a2f3d',
-          800: '#1a1e2b',
-          900: '#0d1017',
-          950: '#080a0f',
-        }
+          300: '#8a8a8a',
+          400: '#666666',
+          500: '#4a4a4a',
+          600: '#333333',
+          700: '#1a1a1a',
+          800: '#111111',
+          900: '#0a0a0a',
+          950: '#050505',
+        },
+      },
+      borderRadius: {
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '8px',
+        xl: '8px',
+        '2xl': '8px',
+      },
+      boxShadow: {
+        'subtle': '0 1px 2px rgba(0,0,0,0.04)',
+        'card': '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        'card-hover': '0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)',
+        'input-focus': '0 0 0 3px rgba(47,111,237,0.12)',
       },
       animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'slide-up': 'slideUp 0.5s ease-out',
-        'glow': 'glow 2s ease-in-out infinite alternate',
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'slide-up-delay': 'slideUp 0.4s ease-out 0.1s both',
+        'blur-in': 'blurIn 0.4s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -52,25 +84,17 @@ const config: Config = {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        glow: {
-          '0%': { boxShadow: '0 0 5px rgba(99, 102, 241, 0.2)' },
-          '100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)' },
+        blurIn: {
+          '0%': { opacity: '0', filter: 'blur(4px)' },
+          '100%': { opacity: '1', filter: 'blur(0)' },
         },
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'grid-pattern': 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-      },
-      backgroundSize: {
-        'grid': '32px 32px',
       },
     },
   },
   plugins: [],
-  darkMode: 'class',
 }
 export default config
 

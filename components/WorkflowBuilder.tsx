@@ -283,23 +283,23 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
   const configuredCount = nodes.filter(n => n.data.action).length
 
   return (
-    <div className="h-screen flex flex-col bg-dark-950">
+    <div className="h-screen flex flex-col bg-surface">
       {/* Top Navigation Bar */}
-      <header className="h-12 border-b border-white/[0.06] bg-dark-950/90 backdrop-blur-xl flex items-center justify-between px-4 shrink-0 z-30">
+      <header className="h-12 border-b border-surface-300 bg-white/80 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-30">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-dark-400 hover:text-white transition text-xs">
+          <Link href="/dashboard" className="flex items-center gap-1.5 text-ink-400 hover:text-ink-700 transition text-xs">
             <ArrowLeftIcon className="h-3.5 w-3.5" />
             Dashboard
           </Link>
-          <div className="h-4 w-px bg-white/[0.06]" />
+          <div className="h-4 w-px bg-surface-300" />
           <Link href="/" className="flex items-center gap-1.5">
-            <SparklesIcon className="h-4.5 w-4.5 text-primary-400" />
-            <span className="text-sm font-bold gradient-text">NavniAI</span>
+            <SparklesIcon className="h-4.5 w-4.5 text-accent-500" />
+            <span className="text-sm font-bold text-ink-700">NavniAI</span>
           </Link>
           {template && (
             <>
-              <div className="h-4 w-px bg-white/[0.06]" />
-              <span className="text-xs text-dark-300 flex items-center gap-1.5">
+              <div className="h-4 w-px bg-surface-300" />
+              <span className="text-xs text-ink-500 flex items-center gap-1.5">
                 <span>{template.icon}</span>
                 {template.name}
               </span>
@@ -307,24 +307,24 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
           )}
           {!template && (
             <>
-              <div className="h-4 w-px bg-white/[0.06]" />
-              <span className="text-xs text-dark-400">New Workflow</span>
+              <div className="h-4 w-px bg-surface-300" />
+              <span className="text-xs text-ink-400">New Workflow</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-2.5">
           {session?.user && (
-            <span className="text-[11px] text-dark-400">
+            <span className="text-[11px] text-ink-400">
               {session.user.name || session.user.email}
             </span>
           )}
-          <Link href="/settings" className="text-[11px] text-dark-400 hover:text-white transition px-2 py-1 rounded-lg hover:bg-white/[0.04]">
+          <Link href="/settings" className="text-[11px] text-ink-400 hover:text-ink-700 transition px-2 py-1 rounded-md hover:bg-surface-100">
             ⚙️ Settings
           </Link>
           {session?.user && (
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="text-[11px] text-dark-500 hover:text-red-400 transition px-2 py-1 rounded-lg hover:bg-white/[0.04] flex items-center gap-1"
+              className="text-[11px] text-ink-300 hover:text-red-500 transition px-2 py-1 rounded-md hover:bg-surface-100 flex items-center gap-1"
             >
               <ArrowRightOnRectangleIcon className="h-3.5 w-3.5" />
               Logout
@@ -351,10 +351,10 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
           onPaneClick={onPaneClick}
           nodeTypes={nodeTypes}
           fitView
-          className="bg-dark-950"
+          className="bg-surface"
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.04)" />
-          <Controls className="bg-dark-800/80 backdrop-blur-sm border border-white/[0.06] rounded-xl" />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(0,0,0,0.06)" />
+          <Controls className="bg-white/80 backdrop-blur-sm border border-surface-300 rounded-md" />
         </ReactFlow>
 
         {/* Toolbar */}
@@ -367,23 +367,23 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
             if (!p) return null
             const badge = getProviderBadge(key)
             return (
-              <a href="/settings" className={`text-[11px] px-3 py-2 glass-card flex items-center gap-1.5 hover:bg-dark-800/80 transition ${badge.textClass}`}>
+              <a href="/settings" className={`text-[11px] px-3 py-2 glass-card flex items-center gap-1.5 hover:bg-surface-100 transition ${badge.textClass}`}>
                 <span>{p.icon}</span>
                 <span>{badge.label}</span>
               </a>
             )
           })()}
           {nodes.length > 0 && (
-            <span className="text-[11px] text-dark-400 glass-card px-3 py-2">
+            <span className="text-[11px] text-ink-400 glass-card px-3 py-2">
               {configuredCount}/{nodes.length} configured
             </span>
           )}
           <button onClick={exportWorkflow} disabled={nodes.length === 0}
-            className="px-3.5 py-2 bg-emerald-600/90 hover:bg-emerald-500 disabled:bg-dark-700 disabled:text-dark-500 text-white rounded-xl flex items-center gap-1.5 transition text-xs font-medium backdrop-blur-sm">
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium">
             💾 Save
           </button>
           <button onClick={runWorkflow} disabled={isRunning || nodes.length === 0}
-            className="px-3.5 py-2 bg-primary-600/90 hover:bg-primary-500 disabled:bg-dark-700 disabled:text-dark-500 text-white rounded-xl flex items-center gap-1.5 transition text-xs font-medium backdrop-blur-sm">
+            className="px-3.5 py-2 bg-accent-600 hover:bg-accent-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium">
             {isRunning ? <><span className="animate-spin">⏳</span> Running...</> : <>▶️ Run Workflow</>}
           </button>
         </div>
@@ -402,10 +402,10 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
         {/* Empty state */}
         {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center text-dark-500">
+            <div className="text-center text-ink-300">
               <p className="text-4xl mb-3 opacity-40">🔧</p>
-              <p className="text-base font-medium">Drop agents from the left palette</p>
-              <p className="text-sm mt-1 text-dark-600">Connect them to build your workflow</p>
+              <p className="text-base font-medium text-ink-400">Drop agents from the left palette</p>
+              <p className="text-sm mt-1 text-ink-300">Connect them to build your workflow</p>
             </div>
           </div>
         )}
@@ -413,16 +413,16 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
 
       {/* Output Panel */}
       {showOutputPanel && executionOutputs && (
-        <div className="h-1/2 border-t border-white/[0.06] bg-dark-900/95 backdrop-blur-xl flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
-            <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+        <div className="h-1/2 border-t border-surface-300 bg-white/95 backdrop-blur-sm flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-300">
+            <h3 className="text-xs font-semibold text-ink-700 flex items-center gap-2">
               📋 Execution Output
-              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-md">
                 {Object.keys(executionOutputs).length} step(s)
               </span>
             </h3>
             <button onClick={() => setShowOutputPanel(false)}
-              className="text-dark-400 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/[0.04] transition">
+              className="text-ink-400 hover:text-ink-700 text-xs px-2 py-1 rounded-md hover:bg-surface-100 transition">
               ✕ Close
             </button>
           </div>
@@ -434,19 +434,19 @@ export function WorkflowBuilder({ templateId }: { templateId?: string } = {}) {
               const action = node?.data?.action || 'execute'
               return (
                 <div key={stepId} className="glass-card overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-white/[0.02]">
+                  <div className="flex items-center gap-2 px-4 py-2 border-b border-surface-300 bg-surface-50">
                     <span className="text-base">{agentIcon}</span>
-                    <span className="font-medium text-white text-xs">{agentName}</span>
-                    <span className="text-[10px] text-dark-400">→ {action}</span>
+                    <span className="font-medium text-ink-700 text-xs">{agentName}</span>
+                    <span className="text-[10px] text-ink-400">→ {action}</span>
                     {(stepResult as any).provider && (() => {
                       const badge = getProviderBadge((stepResult as any).provider)
                       return <span className={`text-[10px] px-1.5 py-0.5 rounded ${badge.bgClass} ${badge.textClass}`}>{badge.label}</span>
                     })()}
-                    <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${
-                      stepResult.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                    <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-md ${
+                      stepResult.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
                     }`}>{stepResult.status}</span>
                   </div>
-                  <pre className="p-4 text-xs text-dark-300 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
+                  <pre className="p-4 text-xs text-ink-500 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto">
                     {stepResult.output}
                   </pre>
                 </div>

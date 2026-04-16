@@ -129,28 +129,28 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
   }
 
   return (
-    <div className="w-80 bg-dark-900/95 backdrop-blur-xl border-r border-white/[0.06] p-4 overflow-y-auto">
+    <div className="w-80 bg-white border-r border-surface-300 p-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-white text-base font-semibold tracking-tight">Agents</h2>
+        <h2 className="text-ink-700 text-base font-semibold tracking-tight">Agents</h2>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-3 py-1.5 bg-primary-600/90 hover:bg-primary-500 text-white text-[11px] rounded-lg transition flex items-center gap-1 font-medium"
+          className="px-3 py-1.5 bg-accent-600 hover:bg-accent-500 text-white text-[11px] rounded-md transition flex items-center gap-1 font-medium"
         >
           + Create
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 mb-4 bg-dark-800/60 rounded-xl p-0.5 border border-white/[0.04]">
+      <div className="flex gap-0.5 mb-4 bg-surface-100 rounded-md p-0.5 border border-surface-300">
         <button
           onClick={() => setActiveTab('agents')}
-          className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition ${activeTab === 'agents' ? 'bg-dark-700/80 text-white shadow-sm' : 'text-dark-400 hover:text-white'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'agents' ? 'bg-white text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
         >
           My Agents
         </button>
         <button
           onClick={() => setActiveTab('templates')}
-          className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition ${activeTab === 'templates' ? 'bg-dark-700/80 text-white shadow-sm' : 'text-dark-400 hover:text-white'}`}
+          className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition ${activeTab === 'templates' ? 'bg-white text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
         >
           📦 Templates
         </button>
@@ -182,9 +182,9 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
 
           {customAgents.length === 0 && (
             <div className="mt-4 p-3.5 glass-card">
-              <h4 className="text-white text-xs font-semibold mb-1.5">💡 Quick Tip</h4>
-              <p className="text-dark-400 text-[11px] leading-relaxed">
-                Click &quot;+ Create&quot; to build custom agents, or browse <button onClick={() => setActiveTab('templates')} className="text-primary-400 hover:underline">Templates</button> for ready-made agents.
+              <h4 className="text-ink-700 text-xs font-semibold mb-1.5">💡 Quick Tip</h4>
+              <p className="text-ink-400 text-[11px] leading-relaxed">
+                Click &quot;+ Create&quot; to build custom agents, or browse <button onClick={() => setActiveTab('templates')} className="text-accent-500 hover:underline">Templates</button> for ready-made agents.
               </p>
             </div>
           )}
@@ -201,7 +201,7 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
                   return (
                     <div
                       key={template.name}
-                      className="p-2.5 rounded-xl border border-white/[0.04] hover:border-white/[0.08] transition-all"
+                      className="p-2.5 rounded-md border border-surface-300 hover:border-surface-400 transition-all"
                       style={{ backgroundColor: template.color + '06' }}
                     >
                       <div className="flex items-center gap-2.5">
@@ -209,16 +209,16 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
                           {template.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-white text-xs font-medium">{template.name}</div>
-                          <div className="text-dark-400 text-[10px] mt-0.5 truncate">{template.description}</div>
+                          <div className="text-ink-700 text-xs font-medium">{template.name}</div>
+                          <div className="text-ink-400 text-[10px] mt-0.5 truncate">{template.description}</div>
                         </div>
                         <button
                           onClick={() => !alreadyAdded && installTemplate(template)}
                           disabled={alreadyAdded}
-                          className={`px-2 py-1 text-[10px] rounded-lg font-medium transition whitespace-nowrap ${
+                          className={`px-2 py-1 text-[10px] rounded-md font-medium transition whitespace-nowrap ${
                             alreadyAdded
-                              ? 'bg-dark-800/60 text-dark-500 cursor-default'
-                              : 'bg-primary-600/15 text-primary-400 hover:bg-primary-600/25'
+                              ? 'bg-surface-100 text-ink-300 cursor-default'
+                              : 'bg-accent-50 text-accent-600 hover:bg-accent-100'
                           }`}
                         >
                           {alreadyAdded ? '✓ Added' : '+ Add'}
@@ -247,7 +247,7 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
 function AgentButton({ agent, onAdd, onDelete }: { agent: Agent; onAdd: (a: Agent) => void; onDelete?: (id: string) => void }) {
   return (
     <div
-      className="w-full p-2.5 rounded-xl text-left hover:bg-white/[0.03] transition-all group cursor-pointer border border-transparent hover:border-white/[0.06]"
+      className="w-full p-2.5 rounded-md text-left hover:bg-surface-50 transition-all group cursor-pointer border border-transparent hover:border-surface-300"
       onClick={() => onAdd(agent)}
     >
       <div className="flex items-center gap-2.5">
@@ -255,18 +255,18 @@ function AgentButton({ agent, onAdd, onDelete }: { agent: Agent; onAdd: (a: Agen
           {agent.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-white text-xs font-medium flex items-center gap-1.5">
+          <div className="text-ink-700 text-xs font-medium flex items-center gap-1.5">
             {agent.name}
             {agent.category === 'custom' && (
-              <span className="text-[9px] bg-primary-600/20 text-primary-400 px-1.5 py-0.5 rounded-md">custom</span>
+              <span className="text-[9px] bg-accent-50 text-accent-600 px-1.5 py-0.5 rounded-md">custom</span>
             )}
           </div>
-          <div className="text-dark-400 text-[10px] mt-0.5 truncate">{agent.description}</div>
+          <div className="text-ink-400 text-[10px] mt-0.5 truncate">{agent.description}</div>
         </div>
         {agent.category === 'custom' && onDelete && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(agent.id) }}
-            className="opacity-0 group-hover:opacity-100 text-dark-500 hover:text-red-400 text-xs transition p-1"
+            className="opacity-0 group-hover:opacity-100 text-ink-300 hover:text-red-500 text-xs transition p-1"
             title="Delete agent"
           >🗑️</button>
         )}
@@ -315,37 +315,37 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-dark-900 border border-white/[0.08] rounded-2xl w-[520px] max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Create Custom Agent</h2>
-          <button onClick={onClose} className="text-dark-400 hover:text-white text-lg transition">✕</button>
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white border border-surface-300 rounded-md w-[520px] max-h-[85vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-surface-300 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink-700">Create Custom Agent</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-700 text-lg transition">✕</button>
         </div>
 
         <div className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Agent Name *</label>
+            <label className="block text-[11px] font-medium text-ink-500 mb-1.5">Agent Name *</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Resume Screener, Contract Reviewer..."
-              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition"
+              className="w-full bg-surface-50 border border-surface-300 text-ink-700 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
             />
           </div>
 
           {/* Icon & Color */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Icon</label>
+              <label className="block text-sm font-medium text-ink-500 mb-1">Icon</label>
               <div className="flex flex-wrap gap-1.5">
                 {ICON_OPTIONS.map(i => (
                   <button
                     key={i}
                     onClick={() => setIcon(i)}
                     className={`w-8 h-8 flex items-center justify-center rounded text-lg transition ${
-                      icon === i ? 'bg-primary-600 ring-2 ring-primary-400' : 'bg-dark-700 hover:bg-dark-600'
+                      icon === i ? 'bg-accent-600 ring-2 ring-accent-300 text-white' : 'bg-surface-100 hover:bg-surface-200'
                     }`}
                   >
                     {i}
@@ -354,14 +354,14 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Color</label>
+              <label className="block text-sm font-medium text-ink-500 mb-1">Color</label>
               <div className="flex flex-wrap gap-1.5">
                 {COLOR_OPTIONS.map(c => (
                   <button
                     key={c}
                     onClick={() => setColor(c)}
                     className={`w-8 h-8 rounded-full transition ${
-                      color === c ? 'ring-2 ring-white scale-110' : 'hover:scale-110'
+                      color === c ? 'ring-2 ring-ink-700 scale-110' : 'hover:scale-110'
                     }`}
                     style={{ backgroundColor: c }}
                   />
@@ -372,41 +372,41 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
 
           {/* Description */}
           <div>
-            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Description</label>
+            <label className="block text-[11px] font-medium text-ink-500 mb-1.5">Description</label>
             <input
               type="text"
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="What does this agent do?"
-              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition"
+              className="w-full bg-surface-50 border border-surface-300 text-ink-700 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
             />
           </div>
 
           {/* System Prompt */}
           <div>
-            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">
-              System Prompt <span className="text-dark-500 text-[10px]">(the agent&apos;s role & context)</span>
+            <label className="block text-[11px] font-medium text-ink-500 mb-1.5">
+              System Prompt <span className="text-ink-300 text-[10px]">(the agent&apos;s role & context)</span>
             </label>
             <textarea
               value={systemPrompt}
               onChange={e => setSystemPrompt(e.target.value)}
               placeholder="You are an expert HR recruiter. You screen resumes against job descriptions, evaluate candidate fit, and provide structured assessments..."
               rows={4}
-              className="w-full bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 resize-y transition"
+              className="w-full bg-surface-50 border border-surface-300 text-ink-700 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 resize-y transition"
             />
           </div>
 
           {/* Actions */}
           <div>
-            <label className="block text-[11px] font-medium text-dark-300 mb-1.5">Actions</label>
+            <label className="block text-[11px] font-medium text-ink-500 mb-1.5">Actions</label>
             <div className="space-y-1.5 mb-2">
               {actions.map((a, i) => (
-                <div key={a.id} className="flex items-center gap-2 bg-dark-800/60 border border-white/[0.04] px-3 py-1.5 rounded-lg text-xs text-dark-300">
+                <div key={a.id} className="flex items-center gap-2 bg-surface-50 border border-surface-300 px-3 py-1.5 rounded-md text-xs text-ink-500">
                   <span className="flex-1">{a.label}</span>
                   {i > 0 && (
                     <button
                       onClick={() => setActions(prev => prev.filter((_, idx) => idx !== i))}
-                      className="text-dark-500 hover:text-red-400 text-xs"
+                      className="text-ink-300 hover:text-red-500 text-xs"
                     >✕</button>
                   )}
                 </div>
@@ -419,12 +419,12 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
                 onChange={e => setNewActionLabel(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddAction()}
                 placeholder="Add action (e.g. Screen Resume)..."
-                className="flex-1 bg-dark-800/60 border border-white/[0.06] text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-primary-500/50 transition"
+                className="flex-1 bg-surface-50 border border-surface-300 text-ink-700 rounded-md px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition"
               />
               <button
                 onClick={handleAddAction}
                 disabled={!newActionLabel.trim()}
-                className="px-3 py-2 bg-dark-700/80 hover:bg-dark-600 disabled:opacity-40 text-white text-xs rounded-xl transition"
+                className="px-3 py-2 bg-surface-200 hover:bg-surface-300 disabled:opacity-40 text-ink-700 text-xs rounded-md transition"
               >
                 Add
               </button>
@@ -433,26 +433,26 @@ function CreateAgentModal({ onClose, onCreate }: { onClose: () => void; onCreate
 
           {/* Preview */}
           {name && (
-            <div className="p-3 rounded-lg border border-dark-600" style={{ backgroundColor: color + '10', borderLeftWidth: 4, borderLeftColor: color }}>
+            <div className="p-3 rounded-md border border-surface-300" style={{ backgroundColor: color + '08', borderLeftWidth: 4, borderLeftColor: color }}>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{icon}</span>
                 <div>
-                  <div className="text-white text-sm font-medium">{name}</div>
-                  <div className="text-gray-400 text-xs">{description || 'Custom agent'}</div>
+                  <div className="text-ink-700 text-sm font-medium">{name}</div>
+                  <div className="text-ink-400 text-xs">{description || 'Custom agent'}</div>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-white/[0.06] flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2.5 text-dark-400 hover:text-white text-xs transition">
+        <div className="px-6 py-4 border-t border-surface-300 flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2.5 text-ink-400 hover:text-ink-700 text-xs transition">
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="btn-primary disabled:bg-dark-700 disabled:text-dark-500 text-xs"
+            className="btn-primary disabled:bg-surface-300 disabled:text-ink-300 text-xs"
           >
             Create Agent
           </button>

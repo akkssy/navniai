@@ -2,9 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
+/* Base styles — Calm Intelligence */
 body {
-  @apply bg-dark-950 text-white antialiased;
+  @apply bg-surface-100 text-ink-700 antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 @layer utilities {
@@ -14,44 +15,52 @@ body {
 }
 
 @layer components {
-  /* Premium glass card */
+  /* Surface card — light, minimal, sharp edges */
   .glass-card {
-    @apply bg-dark-800/60 backdrop-blur-xl border border-white/[0.06] rounded-2xl;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 1px 2px rgba(0,0,0,0.3);
+    @apply bg-white border border-surface-300 rounded-md;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   }
   .glass-card-hover {
-    @apply glass-card transition-all duration-300;
+    @apply glass-card transition-all duration-200;
   }
   .glass-card-hover:hover {
-    @apply border-white/[0.1] bg-dark-800/80;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.05) inset, 0 4px 24px rgba(0,0,0,0.3), 0 0 40px rgba(99,102,241,0.04);
+    @apply border-surface-400;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
   }
 
-  /* Premium button */
+  /* Primary button — accent blue, minimal */
   .btn-primary {
-    @apply px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-medium transition-all duration-200;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,102,241,0.3) inset;
+    @apply px-5 py-2.5 bg-accent-500 hover:bg-accent-600 text-white rounded-md font-medium transition-all duration-200;
+    box-shadow: 0 1px 2px rgba(47,111,237,0.2);
   }
   .btn-primary:hover {
-    box-shadow: 0 4px 16px rgba(99,102,241,0.3), 0 0 0 1px rgba(99,102,241,0.4) inset;
+    box-shadow: 0 4px 12px rgba(47,111,237,0.25);
+    transform: translateY(-0.5px);
   }
 
+  /* Secondary button */
   .btn-secondary {
-    @apply px-5 py-2.5 bg-dark-700/80 hover:bg-dark-600/80 text-gray-300 hover:text-white border border-white/[0.06] rounded-xl font-medium transition-all duration-200;
+    @apply px-5 py-2.5 bg-white hover:bg-surface-200 text-ink-600 border border-surface-300 hover:border-surface-400 rounded-md font-medium transition-all duration-200;
   }
 
-  /* Subtle gradient text */
+  /* Gradient text — accent color for brand */
   .gradient-text {
-    @apply bg-gradient-to-r from-primary-400 via-accent-400 to-primary-400 bg-clip-text text-transparent;
+    @apply text-accent-500;
   }
 
-  /* Section label */
+  /* Section label — editorial uppercase */
   .section-label {
-    @apply text-[11px] font-semibold uppercase tracking-widest text-dark-400;
+    @apply text-[11px] font-semibold uppercase tracking-widest text-ink-300;
+  }
+
+  /* Serif heading utility */
+  .heading-serif {
+    font-family: var(--font-playfair), Georgia, serif;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — light theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -62,12 +71,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.1);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
 }
 
 /* React Flow custom styles */
@@ -83,19 +92,5 @@ body {
 
 .react-flow__edge-path {
   stroke-width: 2;
-}
-
-/* Noise texture overlay for premium depth */
-.noise-bg::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.015;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  z-index: 0;
 }
 

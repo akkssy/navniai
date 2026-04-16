@@ -27,6 +27,7 @@ model User {
   workflows   Workflow[]
   llmSettings LLMSettings?
   customAgents CustomAgent[]
+  documents   Document[]
 }
 
 model Account {
@@ -114,4 +115,35 @@ model CustomAgent {
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── RAG / Knowledge Base Models ───
+
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String           // "employee_handbook.pdf"
+  type      String           // "pdf", "csv", "md", "txt"
+  size      Int              // file size in bytes
+  tags      String   @default("[]")  // JSON array for filtering
+  chunkCount Int     @default(0)
+  createdAt DateTime @default(now())
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
+
+  @@index([userId])
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  content    String           // the text chunk
+  embedding  Unsupported("vector(768)")  // pgvector — 768-dim (EmbeddingGemma compatible)
+  metadata   String   @default("{}")  // page number, section, etc.
+  chunkIndex Int
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
 }

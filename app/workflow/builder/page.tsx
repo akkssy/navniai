@@ -12,7 +12,7 @@ function BuilderWithTemplate() {
 
 export default function WorkflowBuilderPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center text-dark-400">Loading builder...</div>}>
+    <Suspense fallback={<div className="h-screen flex items-center justify-center text-ink-400">Loading builder...</div>}>
       <BuilderWithTemplate />
     </Suspense>
   )
