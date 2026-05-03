@@ -7,10 +7,11 @@ export default withAuth({
 })
 
 // Protect these routes - require authentication
+// Note: /workflow is intentionally NOT protected — builder works without login
+// (LLM execution is client-side, runs save to localStorage for guests)
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/workflow/:path*',
     '/settings/:path*',
   ],
 }

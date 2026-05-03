@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Agent, AgentAction } from './WorkflowBuilder'
+import { Agent, AgentAction, MARKETING_AGENTS } from './WorkflowBuilder'
 
 const ICON_OPTIONS = ['🤖', '📄', '💬', '📊', '⚖️', '📧', '💡', '✍️', '📱', '🎯', '🏥', '🏦', '🎓', '🛒', '📑', '🚩', '👥', '📋', '🔧', '🎨']
 const COLOR_OPTIONS = ['#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#a855f7']
@@ -85,6 +85,37 @@ const AGENT_TEMPLATES: AgentTemplate[] = [
     systemPrompt: 'You are a data analyst. Analyze datasets, identify patterns and trends, create statistical summaries, and generate actionable insights. Present findings in a clear, structured format with visualizations recommendations.',
     actions: [{ id: 'analyze_data', label: 'Analyze Data' }, { id: 'generate_insights', label: 'Generate Insights' }, { id: 'execute', label: 'Custom Task' }],
   },
+  // Content Marketing
+  {
+    name: 'Research Analyst', icon: '🔍', color: '#6366f1', domain: 'Content Marketing',
+    description: 'Topic research, competitive analysis & content briefs',
+    systemPrompt: 'You are a senior content research analyst. Break topics into subtopics, map audience pain points, suggest keyword opportunities (primary, secondary, long-tail), propose unique angles using the Source Sandwich method, and deliver detailed outlines with H2/H3 hierarchy.',
+    actions: [{ id: 'research_topic', label: 'Research Topic' }, { id: 'generate_brief', label: 'Generate Brief' }, { id: 'execute', label: 'Custom Task' }],
+  },
+  {
+    name: 'Content Writer', icon: '✍️', color: '#8b5cf6', domain: 'Content Marketing',
+    description: 'Long-form articles, blog posts & copywriting',
+    systemPrompt: 'You are an elite content writer. Hook in the first 2 sentences. Use inverted pyramid per section. Target Flesch-Kincaid grade 7-9. Weave primary keyword naturally into title, first 100 words, one H2, and conclusion. Include lists, expert quotes, examples, and actionable takeaway boxes.',
+    actions: [{ id: 'write_article', label: 'Write Article' }, { id: 'write_blog_post', label: 'Blog Post' }, { id: 'execute', label: 'Custom Task' }],
+  },
+  {
+    name: 'Content Editor', icon: '📝', color: '#f59e0b', domain: 'Content Marketing',
+    description: 'Proofread, restructure & polish for readability',
+    systemPrompt: 'You are a professional content editor. Apply 4 editing layers: Structure & Flow, Readability & Clarity, Engagement & Persuasion, Brand & Tone Consistency. Flag sentences over 25 words, paragraphs over 4 sentences, passive voice, and jargon. Return edited article with Editor Report.',
+    actions: [{ id: 'edit_article', label: 'Edit & Polish' }, { id: 'readability_check', label: 'Readability Audit' }, { id: 'execute', label: 'Custom Task' }],
+  },
+  {
+    name: 'SEO Optimizer', icon: '📊', color: '#22c55e', domain: 'Content Marketing',
+    description: 'On-page SEO, meta tags, schema & keyword optimization',
+    systemPrompt: 'You are an advanced SEO strategist. Optimize title tags (≤60 chars), meta descriptions (≤155 chars), URL slugs, header keywords, keyword density, internal linking, featured snippets, People Also Ask, LSI terms, E-E-A-T signals, and generate JSON-LD schema markup.',
+    actions: [{ id: 'optimize_seo', label: 'Full SEO Optimization' }, { id: 'generate_metadata', label: 'Generate Metadata' }, { id: 'execute', label: 'Custom Task' }],
+  },
+  {
+    name: 'Social Media Writer', icon: '📱', color: '#ec4899', domain: 'Content Marketing',
+    description: 'Platform-native posts for LinkedIn, X, Instagram & email',
+    systemPrompt: 'You are a viral social media strategist. Create platform-native posts: LinkedIn (bold hook, short paragraphs, hashtags), X/Twitter threads (280 char limit, numbered, standalone tweets), Instagram (story-driven, hashtag strategy), Newsletter blurbs (subject ≤50 chars, preview text, TL;DR). All copy-paste ready.',
+    actions: [{ id: 'create_social_posts', label: 'All Platforms' }, { id: 'linkedin_post', label: 'LinkedIn' }, { id: 'twitter_thread', label: 'X Thread' }, { id: 'execute', label: 'Custom Task' }],
+  },
 ]
 
 // Group templates by domain
@@ -102,7 +133,9 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
   const [showTemplates, setShowTemplates] = useState(false)
   const [activeTab, setActiveTab] = useState<'agents' | 'templates'>('agents')
 
-  const systemAgents = agents.filter(a => a.category === 'system')
+  const marketingAgentIds = new Set(MARKETING_AGENTS.map(a => a.id))
+  const marketingAgents = agents.filter(a => a.category === 'system' && marketingAgentIds.has(a.id))
+  const codingAgents = agents.filter(a => a.category === 'system' && !marketingAgentIds.has(a.id))
   const customAgents = agents.filter(a => a.category === 'custom')
   const existingIds = new Set(agents.map(a => a.name.toLowerCase()))
 
@@ -158,6 +191,14 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
 
       {activeTab === 'agents' ? (
         <>
+          {/* Content Marketing Agents (featured) */}
+          <p className="section-label mb-2">✨ Content Marketing</p>
+          <div className="space-y-1.5 mb-4">
+            {marketingAgents.map((agent) => (
+              <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} />
+            ))}
+          </div>
+
           {/* Custom Agents */}
           {customAgents.length > 0 && (
             <>
@@ -170,12 +211,10 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
             </>
           )}
 
-          {/* System Agents */}
-          <p className="section-label mb-2">
-            {customAgents.length > 0 ? 'Built-in (Code)' : 'Built-in Agents'}
-          </p>
+          {/* Coding Agents */}
+          <p className="section-label mb-2">Code & DevOps</p>
           <div className="space-y-1.5 mb-4">
-            {systemAgents.map((agent) => (
+            {codingAgents.map((agent) => (
               <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} />
             ))}
           </div>
@@ -184,7 +223,7 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
             <div className="mt-4 p-3.5 glass-card">
               <h4 className="text-ink-700 text-xs font-semibold mb-1.5">💡 Quick Tip</h4>
               <p className="text-ink-400 text-[11px] leading-relaxed">
-                Click &quot;+ Create&quot; to build custom agents, or browse <button onClick={() => setActiveTab('templates')} className="text-accent-500 hover:underline">Templates</button> for ready-made agents.
+                Drag Content Marketing agents to build a pipeline: Research → Write → Edit → SEO → Social.
               </p>
             </div>
           )}

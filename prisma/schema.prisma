@@ -84,14 +84,43 @@ model Workflow {
 }
 
 model WorkflowRun {
-  id         String   @id @default(cuid())
-  workflowId String
-  status     String   @default("running")
-  output     String?  // JSON string
-  startedAt  DateTime @default(now())
-  completedAt DateTime?
+  id            String   @id @default(cuid())
+  workflowId    String?
+  userId        String?
+  pipelineType  String   @default("custom") // "custom" | "content" | template id
+  name          String   @default("Untitled Run")
+  status        String   @default("running") // "running" | "completed" | "failed"
+  briefJson     String?  // JSON of ContentBrief or custom inputs
+  executionTime Float?   // seconds
+  stepsTotal    Int      @default(0)
+  stepsCompleted Int     @default(0)
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
 
-  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow    Workflow?    @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  stepResults StepResult[]
+
+  @@index([userId])
+  @@index([pipelineType])
+}
+
+model StepResult {
+  id              String   @id @default(cuid())
+  workflowRunId   String
+  stepId          String   // node id from the execution
+  agentId         String   // e.g. "researcher", "writer", "generator"
+  agentName       String   @default("")
+  action          String   @default("execute")
+  status          String   @default("completed") // "completed" | "failed"
+  output          String   // the LLM output text
+  provider        String   @default("simulated") // which LLM provider was used
+  structuredJson  String?  // JSON string of parsed structured output (AgentStructuredOutput)
+  orderIndex      Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@index([workflowRunId])
 }
 
 model LLMSettings {
@@ -146,4 +175,20 @@ model DocumentChunk {
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
+}
+
+
+// ─── Agent Memory (cross-run scratchpad persistence) ───
+
+model AgentMemory {
+  id           String   @id @default(cuid())
+  userId       String?
+  workflowName String
+  key          String
+  value        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, workflowName, key])
+  @@index([userId, workflowName])
 }

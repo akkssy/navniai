@@ -79,6 +79,80 @@ const SYSTEM_AGENT_ACTIONS: Record<string, AgentAction[]> = {
       { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe the DevOps task...', required: true },
     ]},
   ],
+  // ─── Content Marketing Agents ───
+  researcher: [
+    { id: 'research_topic', label: 'Research Topic', inputs: [
+      { key: 'topic', label: 'Topic / Keyword', type: 'text', placeholder: 'e.g. "AI in content marketing"', required: true },
+      { key: 'audience', label: 'Target Audience', type: 'text', placeholder: 'e.g. "SaaS marketers, beginner level"' },
+      { key: 'competitors', label: 'Competitor URLs (optional)', type: 'textarea', placeholder: 'Paste competitor article URLs...' },
+    ]},
+    { id: 'generate_brief', label: 'Generate Content Brief', inputs: [
+      { key: 'topic', label: 'Topic', type: 'text', placeholder: 'Main topic for the content brief', required: true },
+      { key: 'keywords', label: 'Target Keywords', type: 'text', placeholder: 'Comma-separated keywords...' },
+      { key: 'word_count', label: 'Target Word Count', type: 'text', placeholder: '1500' },
+    ]},
+    { id: 'execute', label: 'Custom Research', inputs: [
+      { key: 'task', label: 'Research Task', type: 'textarea', placeholder: 'Describe what to research...', required: true },
+    ]},
+  ],
+  writer: [
+    { id: 'write_article', label: 'Write Article', inputs: [
+      { key: 'brief', label: 'Content Brief / Outline', type: 'textarea', placeholder: 'Paste outline or use {{researcher.output}}...', required: true },
+      { key: 'tone', label: 'Tone', type: 'text', placeholder: 'professional / conversational / authoritative' },
+      { key: 'word_count', label: 'Target Word Count', type: 'text', placeholder: '1500' },
+    ]},
+    { id: 'write_blog_post', label: 'Write Blog Post', inputs: [
+      { key: 'topic', label: 'Topic', type: 'text', placeholder: 'Blog post topic...', required: true },
+      { key: 'keywords', label: 'Keywords to Include', type: 'text', placeholder: 'primary keyword, secondary keywords...' },
+      { key: 'tone', label: 'Tone', type: 'text', placeholder: 'conversational / formal / witty' },
+    ]},
+    { id: 'execute', label: 'Custom Writing', inputs: [
+      { key: 'task', label: 'Writing Task', type: 'textarea', placeholder: 'Describe what to write...', required: true },
+    ]},
+  ],
+  editor: [
+    { id: 'edit_article', label: 'Edit & Polish', inputs: [
+      { key: 'content', label: 'Content to Edit', type: 'textarea', placeholder: 'Paste article or use {{writer.output}}...', required: true },
+      { key: 'brand_voice', label: 'Brand Voice Guide (optional)', type: 'textarea', placeholder: 'Describe your brand tone and style...' },
+    ]},
+    { id: 'readability_check', label: 'Readability Audit', inputs: [
+      { key: 'content', label: 'Content to Audit', type: 'textarea', placeholder: 'Paste content or use {{writer.output}}...', required: true },
+    ]},
+    { id: 'execute', label: 'Custom Editing', inputs: [
+      { key: 'task', label: 'Editing Task', type: 'textarea', placeholder: 'Describe what to edit...', required: true },
+    ]},
+  ],
+  seo_optimizer: [
+    { id: 'optimize_seo', label: 'Full SEO Optimization', inputs: [
+      { key: 'content', label: 'Content to Optimize', type: 'textarea', placeholder: 'Paste article or use {{editor.output}}...', required: true },
+      { key: 'primary_keyword', label: 'Primary Keyword', type: 'text', placeholder: 'Your main target keyword', required: true },
+      { key: 'secondary_keywords', label: 'Secondary Keywords', type: 'text', placeholder: 'Comma-separated secondary keywords...' },
+    ]},
+    { id: 'generate_metadata', label: 'Generate SEO Metadata', inputs: [
+      { key: 'content', label: 'Content', type: 'textarea', placeholder: 'Paste article or use {{writer.output}}...', required: true },
+      { key: 'primary_keyword', label: 'Primary Keyword', type: 'text', placeholder: 'Target keyword...', required: true },
+    ]},
+    { id: 'execute', label: 'Custom SEO Task', inputs: [
+      { key: 'task', label: 'SEO Task', type: 'textarea', placeholder: 'Describe what to optimize...', required: true },
+    ]},
+  ],
+  social_writer: [
+    { id: 'create_social_posts', label: 'Create Social Posts (All Platforms)', inputs: [
+      { key: 'content', label: 'Source Content', type: 'textarea', placeholder: 'Paste article or use {{editor.output}}...', required: true },
+      { key: 'platforms', label: 'Platforms', type: 'text', placeholder: 'LinkedIn, X/Twitter, Instagram, Newsletter (default: all)' },
+    ]},
+    { id: 'linkedin_post', label: 'LinkedIn Post', inputs: [
+      { key: 'content', label: 'Source Content', type: 'textarea', placeholder: 'Paste article or key points...', required: true },
+      { key: 'cta', label: 'Call to Action', type: 'text', placeholder: 'What should readers do? (e.g. Comment, Visit link)' },
+    ]},
+    { id: 'twitter_thread', label: 'X/Twitter Thread', inputs: [
+      { key: 'content', label: 'Source Content', type: 'textarea', placeholder: 'Paste article or key points...', required: true },
+      { key: 'thread_length', label: 'Thread Length', type: 'text', placeholder: '5-7 tweets (default)' },
+    ]},
+    { id: 'execute', label: 'Custom Social Task', inputs: [
+      { key: 'task', label: 'Social Media Task', type: 'textarea', placeholder: 'Describe what to create...', required: true },
+    ]},
+  ],
 }
 
 // Resolve actions: use agent.actions for custom agents, SYSTEM_AGENT_ACTIONS for system agents

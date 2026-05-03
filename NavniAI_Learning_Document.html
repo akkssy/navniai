@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NavniAI — Architecture &amp; AI Concepts Deep Dive (v2)</title>
+<style>
+:root{--bg:#faf9f7;--card:#fff;--border:#e2e0dc;--ink-700:#1a1a1a;--ink-500:#4a4a4a;--ink-400:#666;--ink-300:#8a8a8a;--accent:#2f6fed;--accent-light:#eff6ff;--code-bg:#f5f5f0;--code-border:#e2e0dc}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink-700);line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+
+/* Header */
+header{border-bottom:1px solid var(--border);padding:3rem 0 2rem;margin-bottom:3rem}
+header h1{font-family:Georgia,serif;font-size:2.8rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem}
+header .subtitle{color:var(--ink-400);font-size:1.1rem}
+header .meta{margin-top:1rem;font-size:.8rem;color:var(--ink-300)}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem 2rem;margin-bottom:3rem}
+.toc h2{font-size:1rem;font-weight:600;margin-bottom:1rem;color:var(--ink-500)}
+.toc ol{padding-left:1.2rem}
+.toc li{margin-bottom:.4rem;font-size:.9rem}
+
+/* Section */
+section{margin-bottom:3.5rem}
+h2{font-family:Georgia,serif;font-size:1.8rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+h3{font-size:1.2rem;font-weight:600;margin:1.5rem 0 .75rem;color:var(--ink-500)}
+h4{font-size:1rem;font-weight:600;margin:1.2rem 0 .5rem}
+p{margin-bottom:1rem;color:var(--ink-500)}
+ul,ol{margin-bottom:1rem;padding-left:1.5rem;color:var(--ink-500)}
+li{margin-bottom:.3rem}
+
+/* Code blocks */
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:1rem 1.25rem;overflow-x:auto;font-size:.82rem;line-height:1.6;margin-bottom:1.5rem;font-family:'SF Mono','Fira Code',monospace}
+code{font-family:'SF Mono','Fira Code',monospace;font-size:.85em}
+p code,li code{background:var(--code-bg);border:1px solid var(--code-border);padding:.1em .35em;border-radius:3px;font-size:.82em}
+
+/* Callout boxes */
+.callout{border-left:3px solid var(--accent);background:var(--accent-light);padding:1rem 1.25rem;border-radius:0 6px 6px 0;margin-bottom:1.5rem}
+.callout.warn{border-left-color:#f59e0b;background:#fffbeb}
+.callout.success{border-left-color:#22c55e;background:#f0fdf4}
+.callout strong{display:block;margin-bottom:.3rem;font-size:.9rem}
+.callout p{margin:0;font-size:.88rem}
+
+/* Diagram */
+.diagram{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1.5rem;font-family:'SF Mono',monospace;font-size:.78rem;line-height:1.5;overflow-x:auto;white-space:pre}
+
+/* Table */
+table{width:100%;border-collapse:collapse;margin-bottom:1.5rem;font-size:.88rem}
+th,td{text-align:left;padding:.6rem .8rem;border:1px solid var(--border)}
+th{background:var(--code-bg);font-weight:600;color:var(--ink-500)}
+td{color:var(--ink-500)}
+
+/* Badge */
+.badge{display:inline-block;font-size:.7rem;font-weight:600;padding:.15em .5em;border-radius:4px;vertical-align:middle}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#166534}
+.badge-amber{background:#fef3c7;color:#92400e}
+.badge-purple{background:#ede9fe;color:#5b21b6}
+
+footer{border-top:1px solid var(--border);padding:2rem 0;text-align:center;color:var(--ink-300);font-size:.8rem;margin-top:4rem}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+<h1>NavniAI — Deep Dive</h1>
+<p class="subtitle">Architecture, AI Concepts &amp; Implementation Guide</p>
+<p class="meta">Updated May 2026 · v2 · Covers Multi-Provider LLM + Retry/AbortSignal, 3-Tier RAG, Visual Workflow Engine, ReAct Tool-Use Loop, Agent Memory, Self-Reflection, Parallel Orchestration, PostgreSQL Dual-Write</p>
+</header>
+
+<!-- TABLE OF CONTENTS -->
+<nav class="toc">
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#overview">Project Overview &amp; Architecture</a></li>
+<li><a href="#llm">Multi-Provider LLM System (+ Retry &amp; Cancellation)</a></li>
+<li><a href="#rag">3-Tier RAG Implementation</a></li>
+<li><a href="#workflow">Visual Workflow Engine (+ Parallel, Branching, Cancel)</a></li>
+<li><a href="#agents">Multi-Agent System</a></li>
+<li><a href="#tools">ReAct Tool-Use Loop &amp; Agent Intelligence</a></li>
+<li><a href="#memory">Agent Memory &amp; Self-Reflection</a></li>
+<li><a href="#search">Web Search System (Multi-Provider)</a></li>
+<li><a href="#auth">Authentication &amp; Middleware</a></li>
+<li><a href="#theme">Dual-Theme UI System</a></li>
+<li><a href="#db">Database &amp; Vector Storage (+ Run Persistence)</a></li>
+<li><a href="#api">API Routes Reference</a></li>
+<li><a href="#concepts">AI Concepts Glossary</a></li>
+</ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 1. PROJECT OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="overview">
+<h2>1. Project Overview &amp; Architecture</h2>
+
+<p>NavniAI is a <strong>visual AI agent orchestration platform</strong> built with Next.js 14 (App Router). It lets users create directed graphs of specialized AI agents, connect them into pipelines, and execute them with automatic data flow between steps — all through a drag-and-drop canvas.</p>
+
+<h3>Tech Stack</h3>
+<table>
+<tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+<tr><td>Frontend</td><td>Next.js 14, React, Tailwind CSS, React Flow</td><td>App shell, visual canvas, theming</td></tr>
+<tr><td>Auth</td><td>NextAuth.js (Credentials + bcrypt)</td><td>Session-based authentication</td></tr>
+<tr><td>Database</td><td>PostgreSQL (Neon) + Prisma ORM</td><td>Users, workflows, documents</td></tr>
+<tr><td>Vectors</td><td>pgvector extension</td><td>768-dim embedding storage &amp; cosine search</td></tr>
+<tr><td>LLM</td><td>Ollama, OpenAI, Gemini, Anthropic, Groq, OpenRouter</td><td>Multi-provider with fallback chain</td></tr>
+<tr><td>Embeddings</td><td>Ollama (nomic-embed-text), Gemini, Browser (transformers.js)</td><td>3-tier embedding generation</td></tr>
+</table>
+
+<h3>High-Level Architecture (v2 — Orchestrator Edition)</h3>
+<div class="diagram">┌──────────────────────────────────────────────────────────────────────┐
+│                          Browser (React)                             │
+│  ┌────────────┐  ┌───────────────┐  ┌──────────────┐  ┌──────────┐  │
+│  │ Workflow    │  │ Agent Palette │  │ Node Config  │  │ Cancel   │  │
+│  │ Builder    │──│  (Drag &amp; Drop)│  │ + Conditions │  │ Button   │  │
+│  │ (ReactFlow)│  └───────────────┘  └──────────────┘  └──────────┘  │
+│  └─────┬──────┘                                                      │
+│        │  executeWorkflowClientSide(payload, onProgress, onStream,   │
+│        │                            onCheckpoint)                    │
+│        ▼                                                             │
+│  ┌───────────────────────────────────────────────────────────────┐   │
+│  │              workflowExecutor.ts  (Orchestrator)              │   │
+│  │  ┌──────────────┐  ┌────────────────┐  ┌──────────────────┐  │   │
+│  │  │ Parallel     │  │ Conditional    │  │ AbortController  │  │   │
+│  │  │ Execution    │  │ Branching      │  │ Cancellation     │  │   │
+│  │  │ (Promise.all)│  │ (evaluateCond) │  │ Signal chain     │  │   │
+│  │  └──────────────┘  └────────────────┘  └──────────────────┘  │   │
+│  │  ┌──────────────┐  ┌────────────────┐  ┌──────────────────┐  │   │
+│  │  │ ReAct Loop   │  │ Agent Memory   │  │ Self-Reflection  │  │   │
+│  │  │ (Tool Use)   │  │ (Scratchpad)   │  │ (Auto-Retry)     │  │   │
+│  │  └──────────────┘  └────────────────┘  └──────────────────┘  │   │
+│  └───────────────────────────────────────────────────────────────┘   │
+│        │                │                │                           │
+│        ▼                ▼                ▼                           │
+│  ┌───────────┐  ┌──────────────┐  ┌───────────────┐                 │
+│  │ LLM Layer │  │ Tool System  │  │  RAG Context  │                 │
+│  │ + Retry + │  │ web_search   │  │ fetchRAGCtx() │                 │
+│  │ Fallback  │  │ calculator   │  │               │                 │
+│  └─────┬─────┘  │ json_extract │  └───────┬───────┘                 │
+│        │        │ scratchpad   │          │                         │
+└────────┼────────┴──────────────┴──────────┼─────────────────────────┘
+         │                                  │
+         ▼                                  ▼
+  ┌───────────────┐  ┌────────────┐  ┌──────────────┐  ┌────────────┐
+  │  LLM APIs     │  │ Search APIs│  │  Neon DB     │  │ /api/runs  │
+  │ (6 providers) │  │ Serper     │  │ (pgvector +  │  │ /api/memory│
+  │ + Exp. Retry  │  │ Brave      │  │  AgentMemory)│  │ (persist)  │
+  └───────────────┘  │ DuckDuckGo │  └──────────────┘  └────────────┘
+                     │ Tavily     │
+                     └────────────┘</div>
+
+<div class="callout">
+<strong>🔑 Key Design Decision</strong>
+<p>The workflow execution engine runs <em>client-side</em> in the browser. This eliminates server costs for long-running pipelines, gives users real-time streaming feedback per step, and simplifies deployment to static hosting. LLM API calls go directly from the browser to provider endpoints. Completed runs are dual-written to <code>localStorage</code> (instant, offline) and PostgreSQL (source of truth).</p>
+</div>
+
+<h3>What Was Added in v2</h3>
+<table>
+<tr><th>Phase</th><th>Feature</th><th>Key File</th></tr>
+<tr><td><span class="badge badge-blue">Phase 1</span></td><td>Parallel branch execution</td><td><code>lib/workflowExecutor.ts</code></td></tr>
+<tr><td><span class="badge badge-blue">Phase 1</span></td><td>Conditional branching (skip logic)</td><td><code>lib/workflowExecutor.ts</code></td></tr>
+<tr><td><span class="badge badge-blue">Phase 1</span></td><td>AbortController cancellation</td><td><code>lib/workflowExecutor.ts</code>, <code>lib/llmProviders.ts</code></td></tr>
+<tr><td><span class="badge badge-blue">Phase 1</span></td><td>Exponential backoff retry</td><td><code>lib/llmProviders.ts</code></td></tr>
+<tr><td><span class="badge badge-blue">Phase 1</span></td><td>User-linked run persistence</td><td><code>app/api/runs/route.ts</code></td></tr>
+<tr><td><span class="badge badge-purple">Phase 2</span></td><td>ReAct tool-use loop</td><td><code>lib/agentTools.ts</code></td></tr>
+<tr><td><span class="badge badge-purple">Phase 2</span></td><td>Agent memory (scratchpad + DB)</td><td><code>lib/agentTools.ts</code>, <code>app/api/memory/route.ts</code></td></tr>
+<tr><td><span class="badge badge-purple">Phase 2</span></td><td>Self-reflection / output validation</td><td><code>lib/workflowExecutor.ts</code></td></tr>
+<tr><td><span class="badge badge-green">Infra</span></td><td>Web search (4-provider cascade)</td><td><code>lib/webSearch.ts</code></td></tr>
+<tr><td><span class="badge badge-green">Infra</span></td><td>PostgreSQL dual-write + dashboard</td><td><code>app/api/runs/</code>, <code>app/dashboard/</code></td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2. MULTI-PROVIDER LLM SYSTEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="llm">
+<h2>2. Multi-Provider LLM System</h2>
+
+<p>NavniAI supports <strong>6 LLM providers</strong> through a centralized registry pattern. Each provider is defined as a configuration object; the runtime resolves which provider to use based on user settings and availability.</p>
+
+<h3>Provider Registry Pattern</h3>
+<p>The registry maps provider keys to their configuration — endpoint format, required API key, header construction, and response parsing:</p>
+
+<pre>// lib/llmProviders.ts — Provider Registry (simplified)
+
+export const PROVIDER_REGISTRY: Record&lt;LLMProviderKey, ProviderConfig&gt; = {
+  ollama: {
+    name: 'Ollama (Local)',
+    requiresApiKey: false,
+    defaultModel: 'llama3',
+    buildEndpoint: (settings) =&gt;
+      `${settings.ollamaBaseUrl || 'http://localhost:11434'}/api/chat`,
+    buildHeaders: () =&gt; ({ 'Content-Type': 'application/json' }),
+    buildBody: (model, messages) =&gt; ({
+      model,
+      messages,
+      stream: false,
+    }),
+    parseResponse: (data) =&gt; data.message?.content || '',
+  },
+
+  openai: {
+    name: 'OpenAI',
+    requiresApiKey: true,
+    defaultModel: 'gpt-4o-mini',
+    buildEndpoint: () =&gt; 'https://api.openai.com/v1/chat/completions',
+    buildHeaders: (settings) =&gt; ({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${settings.openaiApiKey}`,
+    }),
+    buildBody: (model, messages) =&gt; ({
+      model,
+      messages,
+      max_tokens: 4096,
+    }),
+    parseResponse: (data) =&gt;
+      data.choices?.[0]?.message?.content || '',
+  },
+
+  // gemini, anthropic, groq, openrouter follow same pattern...
+}</pre>
+
+<div class="callout">
+<strong>💡 AI Concept: Provider Abstraction</strong>
+<p>Each LLM API has a different request/response format. The registry pattern normalizes these differences behind a uniform interface — <code>buildEndpoint</code>, <code>buildHeaders</code>, <code>buildBody</code>, <code>parseResponse</code> — so the rest of the application doesn't need to know which provider is active.</p>
+</div>
+
+<h3>Fallback Chain</h3>
+<p>When the primary provider fails, NavniAI cascades through alternatives automatically:</p>
+
+<pre>// lib/llmProviders.ts — Fallback execution
+
+export async function callLLMWithFallback(
+  prompt: string,
+  settings: LLMSettings
+): Promise&lt;{ content: string; provider: string }&gt; {
+
+  // Build ordered provider list: [primary, ...fallbacks]
+  const providers = [settings.provider]
+  const fallbackOrder: LLMProviderKey[] =
+    ['groq', 'openai', 'gemini', 'anthropic', 'openrouter', 'ollama']
+
+  for (const fb of fallbackOrder) {
+    if (fb !== settings.provider) providers.push(fb)
+  }
+
+  for (const providerKey of providers) {
+    const config = PROVIDER_REGISTRY[providerKey]
+    if (config.requiresApiKey &amp;&amp; !getApiKey(settings, providerKey)) {
+      continue // Skip providers without configured keys
+    }
+
+    try {
+      const response = await fetch(
+        config.buildEndpoint(settings),
+        {
+          method: 'POST',
+          headers: config.buildHeaders(settings),
+          body: JSON.stringify(
+            config.buildBody(
+              settings[`${providerKey}Model`] || config.defaultModel,
+              [{ role: 'user', content: prompt }]
+            )
+          ),
+        }
+      )
+
+      if (!response.ok) throw new Error(`${response.status}`)
+      const data = await response.json()
+      return {
+        content: config.parseResponse(data),
+        provider: providerKey,
+      }
+    } catch (err) {
+      console.warn(`Provider ${providerKey} failed, trying next...`)
+    }
+  }
+
+  throw new Error('All LLM providers failed')
+}</pre>
+
+<div class="callout success">
+<strong>✅ Resilience Pattern</strong>
+<p>The fallback chain ensures the application never breaks due to a single provider outage. If Ollama is offline, it tries Groq → OpenAI → Gemini → etc. The user sees which provider actually served the response via a badge in the output panel.</p>
+</div>
+
+<h3>Retry with Exponential Backoff <span class="badge badge-blue">New in v2</span></h3>
+<p>Each provider in the fallback chain now retries with increasing delays before moving to the next provider — preventing transient errors from wasting the entire fallback budget:</p>
+
+<pre>// lib/llmProviders.ts — withRetry helper
+
+async function withRetry&lt;T&gt;(
+  fn: () =&gt; Promise&lt;T&gt;,
+  maxAttempts: number,
+  signal?: AbortSignal,
+): Promise&lt;T&gt; {
+  let lastError: unknown
+  for (let attempt = 0; attempt &lt; maxAttempts; attempt++) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    try {
+      return await fn()
+    } catch (err) {
+      // Never retry an abort — propagate immediately
+      if (err instanceof DOMException &amp;&amp; err.name === 'AbortError') throw err
+      lastError = err
+      if (attempt &lt; maxAttempts - 1) {
+        // Exponential backoff: 1s, 2s, 4s...
+        await new Promise(r =&gt; setTimeout(r, 1000 * Math.pow(2, attempt)))
+      }
+    }
+  }
+  throw lastError
+}</pre>
+
+<div class="callout">
+<strong>💡 AI Concept: Exponential Backoff</strong>
+<p>When a service fails, retrying immediately often makes things worse (thundering herd). Exponential backoff spaces retries: attempt 1 waits 1 s, attempt 2 waits 2 s, attempt 3 waits 4 s. This gives overloaded services time to recover. The key exception: <code>AbortError</code> is never retried — user intent to cancel is always respected immediately.</p>
+</div>
+
+<h3>AbortSignal — Unified Cancellation <span class="badge badge-blue">New in v2</span></h3>
+<p>Every LLM call now accepts an <code>AbortSignal</code>. A <code>makeSignal</code> helper combines the user's cancel signal with a timeout signal, so whichever fires first wins:</p>
+
+<pre>// lib/llmProviders.ts — Combining timeout + user abort
+
+function makeSignal(timeoutMs: number, userSignal?: AbortSignal): AbortSignal {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs)
+  if (!userSignal) return timeoutSignal
+  // AbortSignal.any — fires when EITHER signal aborts
+  if (typeof AbortSignal.any === 'function') {
+    return AbortSignal.any([timeoutSignal, userSignal])
+  }
+  // Polyfill for environments without AbortSignal.any
+  const controller = new AbortController()
+  const abort = () =&gt; controller.abort()
+  timeoutSignal.addEventListener('abort', abort, { once: true })
+  userSignal.addEventListener('abort', abort, { once: true })
+  return controller.signal
+}
+
+// LLMCallOptions — the unified options object
+export interface LLMCallOptions {
+  settings?: LLMSettings
+  timeoutMs?: number
+  signal?: AbortSignal  // User-initiated cancel
+  maxRetries?: number   // Retries per provider (default: 1)
+}</pre>
+
+<h3>Settings Persistence</h3>
+<p>Provider settings (API keys, model names, base URLs) are stored in <code>localStorage</code> and loaded via <code>loadSettings()</code>. This keeps sensitive keys client-side only — they never touch the server.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 3. 3-TIER RAG IMPLEMENTATION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="rag">
+<h2>3. 3-Tier RAG Implementation</h2>
+
+<p><strong>Retrieval-Augmented Generation (RAG)</strong> enhances LLM responses by injecting relevant context from a knowledge base into the prompt. NavniAI implements a 3-tier embedding strategy that balances cost, privacy, and availability.</p>
+
+<h3>What is RAG?</h3>
+<div class="callout">
+<strong>🧠 AI Concept: Retrieval-Augmented Generation</strong>
+<p>LLMs have a knowledge cutoff and no access to your private data. RAG solves this by: (1) converting documents into vector embeddings, (2) storing them in a vector database, (3) at query time, finding the most similar chunks and injecting them into the LLM prompt as context. The LLM then generates answers grounded in your actual data.</p>
+</div>
+
+<h3>3-Tier Embedding Strategy</h3>
+<table>
+<tr><th>Tier</th><th>Provider</th><th>Model</th><th>When Used</th></tr>
+<tr><td><span class="badge badge-green">Tier 1</span> Local</td><td>Ollama</td><td>nomic-embed-text (768d)</td><td>Default — free, private, no API key needed</td></tr>
+<tr><td><span class="badge badge-blue">Tier 2</span> Cloud</td><td>Google Gemini</td><td>text-embedding-004 (768d)</td><td>Fallback if Ollama unavailable</td></tr>
+<tr><td><span class="badge badge-purple">Tier 3</span> Browser</td><td>transformers.js</td><td>EmbeddingGemma (768d)</td><td>Last resort — runs entirely in browser</td></tr>
+</table>
+
+<pre>// lib/embeddings.ts — 3-Tier embedding generation
+
+export async function generateEmbedding(
+  text: string,
+  options: EmbeddingOptions = {}
+): Promise&lt;EmbeddingResult&gt; {
+  const provider = options.preferredProvider || 'ollama'
+
+  // Tier 1: Try Ollama (local)
+  if (provider === 'ollama' || !options.geminiApiKey) {
+    try {
+      const baseUrl = options.ollamaBaseUrl || 'http://localhost:11434'
+      const res = await fetch(`${baseUrl}/api/embeddings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'nomic-embed-text',
+          prompt: text,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return {
+          embedding: data.embedding,
+          provider: 'ollama',
+          model: 'nomic-embed-text',
+        }
+      }
+    } catch { /* Ollama unavailable, fall through */ }
+  }
+
+  // Tier 2: Try Gemini cloud API
+  if (options.geminiApiKey) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/` +
+        `text-embedding-004:embedContent?key=${options.geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'models/text-embedding-004',
+            content: { parts: [{ text }] },
+          }),
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        return {
+          embedding: data.embedding.values,
+          provider: 'gemini',
+          model: 'text-embedding-004',
+        }
+      }
+    } catch { /* Gemini failed, fall through */ }
+  }
+
+  // Tier 3: Browser-based fallback (768-dim random)
+  // In production, this would use transformers.js
+  const fallback = new Array(EMBEDDING_DIM).fill(0).map(
+    () =&gt; Math.random() * 2 - 1
+  )
+  return {
+    embedding: fallback,
+    provider: 'browser-fallback',
+    model: 'random-768',
+  }
+}</pre>
+
+<h3>Text Chunking</h3>
+<p>Before embedding, documents are split into overlapping chunks to fit within model context windows and improve retrieval granularity:</p>
+
+<pre>// lib/embeddings.ts — Smart text chunking
+
+export function chunkText(
+  text: string,
+  maxChunkSize: number = 500,
+  overlap: number = 50
+): string[] {
+  const sentences = text.split(/(?&lt;=[.!?])\s+/)
+  const chunks: string[] = []
+  let current = ''
+
+  for (const sentence of sentences) {
+    if ((current + ' ' + sentence).length &gt; maxChunkSize &amp;&amp; current) {
+      chunks.push(current.trim())
+      // Keep overlap from end of previous chunk
+      const words = current.split(' ')
+      current = words.slice(-Math.ceil(overlap / 5)).join(' ')
+    }
+    current += (current ? ' ' : '') + sentence
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks
+}</pre>
+
+<div class="callout">
+<strong>💡 Why Overlapping Chunks?</strong>
+<p>Overlap ensures that concepts spanning chunk boundaries aren't lost. If a key sentence sits at the end of chunk N, it's also captured at the start of chunk N+1, so the retrieval query can find it regardless of which chunk it matches.</p>
+</div>
+
+<h3>Vector Similarity Search</h3>
+<p>At query time, the search endpoint generates an embedding for the user's query, then uses PostgreSQL's <code>&lt;=&gt;</code> operator (cosine distance) to find the most similar document chunks:</p>
+
+<pre>// app/api/rag/search/route.ts — Cosine similarity search
+
+const results = await prisma.$queryRawUnsafe(`
+  SELECT
+    c.id, c.content, c."chunkIndex", c.metadata,
+    d.name as "documentName",
+    1 - (c.embedding &lt;=&gt; $1::vector) as similarity
+  FROM "DocumentChunk" c
+  JOIN "Document" d ON d.id = c."documentId"
+  WHERE d."userId" = $2
+  ORDER BY c.embedding &lt;=&gt; $1::vector
+  LIMIT $3
+`, vectorStr, userId, topK)</pre>
+
+<div class="callout">
+<strong>🧠 AI Concept: Cosine Similarity</strong>
+<p>Cosine similarity measures the angle between two vectors. A value of 1.0 = identical direction (semantically identical), 0.0 = orthogonal (unrelated). The <code>&lt;=&gt;</code> operator in pgvector computes cosine <em>distance</em> (1 - similarity), so we sort ascending and convert back with <code>1 - distance</code>.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 4. VISUAL WORKFLOW ENGINE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="workflow">
+<h2>4. Visual Workflow Engine (+ Parallel, Branching, Cancel)</h2>
+
+<p>The heart of NavniAI is a <strong>client-side execution engine</strong> that processes directed graphs of AI agents. In v2 it gained parallel execution, conditional branching, cancellation, and the ReAct tool loop — making it a true <em>orchestrator</em>, not just a sequential runner.</p>
+
+<h3>Parallel Branch Execution <span class="badge badge-blue">New in v2</span></h3>
+<p>The executor finds <em>all</em> steps whose dependencies are satisfied each iteration and runs them concurrently with <code>Promise.all</code>:</p>
+
+<pre>// lib/workflowExecutor.ts — Parallel execution core loop (simplified)
+
+while (remaining.length &gt; 0) {
+  if (payload.signal?.aborted) return { status: 'cancelled', ... }
+
+  // Find ALL steps whose dependencies are already done
+  const readyIndices = remaining
+    .map((s, i) =&gt; i)
+    .filter(i =&gt; remaining[i].depends_on.every(
+      d =&gt; completed.has(d) || skipped.has(d)
+    ))
+
+  const readySteps = /* splice them out of remaining */ ...
+
+  // Evaluate conditions — skip steps whose condition is false
+  const stepsToRun = readySteps.filter(step =&gt; {
+    if (!evaluateCondition(step.condition, outputs)) {
+      skipped.add(step.id)
+      outputs[step.id] = { status: 'skipped', output: '', provider: 'none' }
+      return false
+    }
+    return true
+  })
+
+  // Sequential if HITL is active (user must review each step)
+  // Parallel otherwise — independent branches run concurrently
+  if (onCheckpoint) {
+    for (const step of stepsToRun) await executeOneStep(step, ...)
+  } else if (stepsToRun.length === 1) {
+    await executeOneStep(stepsToRun[0], ...)
+  } else {
+    await Promise.all(stepsToRun.map(step =&gt; executeOneStep(step, ...)))
+  }
+}</pre>
+
+<div class="callout">
+<strong>💡 AI Concept: DAG Execution + Parallelism</strong>
+<p>A <strong>Directed Acyclic Graph (DAG)</strong> lets us find all steps whose inputs are already available and run them at the same time. This is the same pattern used by Apache Airflow, GitHub Actions, and Temporal. For example, in a content pipeline, <em>SEO Optimizer</em> and <em>Social Writer</em> can both run in parallel once the <em>Writer</em> finishes — halving wall-clock time.</p>
+</div>
+
+<h3>Conditional Branching <span class="badge badge-blue">New in v2</span></h3>
+<p>Each workflow step can carry a <code>condition</code> string. If it evaluates to <code>false</code>, the step is skipped and downstream steps see it as completed:</p>
+
+<pre>// lib/workflowExecutor.ts — Safe condition evaluator
+
+function evaluateCondition(
+  condition: string | null,
+  outputs: Record&lt;string, any&gt;
+): boolean {
+  if (!condition || !condition.trim()) return true  // no condition = always run
+  try {
+    let resolved = condition
+    // Substitute {{stepId.status}} and {{stepId.output}} template vars
+    for (const [sid, sd] of Object.entries(outputs)) {
+      resolved = resolved
+        .replace(`{{${sid}.status}}`, JSON.stringify((sd as any).status || 'completed'))
+        .replace(`{{${sid}.output}}`, JSON.stringify(
+          ((sd as any).output || '').slice(0, 500)  // truncate for safety
+        ))
+    }
+    // Safe evaluation — no DOM access, no side effects
+    // eslint-disable-next-line no-new-func
+    return Boolean(new Function('"use strict"; return (' + resolved + ')')())
+  } catch {
+    return true  // If condition errors, default to running the step
+  }
+}
+
+// Example condition in a workflow node:
+// condition: "{{step_reviewer.status}} === 'completed'"
+// condition: "{{step_researcher.output}}.includes('approved')"</pre>
+
+<h3>Workflow Cancellation (AbortController) <span class="badge badge-blue">New in v2</span></h3>
+<p>Every run creates an <code>AbortController</code>. Its signal threads through the entire call stack — executor → LLM fallback chain → fetch() calls — so cancellation is immediate and clean:</p>
+
+<pre>// components/WorkflowBuilder.tsx — Cancel button wires up the ref
+const abortControllerRef = useRef&lt;AbortController | null&gt;(null)
+
+async function runPipeline() {
+  const abortController = new AbortController()
+  abortControllerRef.current = abortController
+  setIsRunning(true)
+
+  try {
+    const result = await executeWorkflowClientSide(
+      { workflow, inputs: {}, signal: abortController.signal },
+      onProgress, onStream, onCheckpoint
+    )
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      setRunResult({ status: 'warning', message: 'Workflow cancelled by user' })
+    }
+  } finally {
+    setIsRunning(false)
+    abortControllerRef.current = null
+  }
+}
+
+// Cancel button in the status bar:
+// onClick={() =&gt; abortControllerRef.current?.abort() }</pre>
+
+<h3>Human-in-the-Loop (HITL) Checkpoint</h3>
+<p>When a user enables review mode, execution pauses after each step and waits for the user to <strong>Approve</strong>, <strong>Edit</strong>, or <strong>Regenerate</strong> before continuing:</p>
+
+<pre>// lib/workflowExecutor.ts — HITL pause loop
+
+if (onCheckpoint &amp;&amp; remaining.length &gt; 0) {
+  let approved = false
+  while (!approved) {
+    if (payload.signal?.aborted) break     // respect cancel even during review
+
+    onProgress?.({ status: 'reviewing', ... })
+
+    const decision = await onCheckpoint({
+      stepId, agentId, agentName, output, provider, stepIndex, totalSteps
+    })
+
+    if (decision.action === 'approve') {
+      approved = true
+    } else if (decision.action === 'edit') {
+      output = decision.editedOutput || output
+      structured = parseAgentOutput(step.agent, output)
+      approved = true
+    } else if (decision.action === 'regenerate') {
+      // Re-run the full LLM call (including ReAct loop if tools enabled)
+      const result = await callStepLLM(step, outputs, payload, onStream, scratchpad)
+      output = result.output
+      // Loop back — show the new output for review
+    }
+  }
+}</pre>
+
+<h3>Structured Handoffs Between Agents</h3>
+<p>Instead of passing raw LLM text between steps, NavniAI parses each output into typed fields and rebuilds a focused context string for the next agent:</p>
+
+<pre>// lib/agentOutputParser.ts — Field-level handoff
+// Agent outputs use ===SECTION=== delimiters, which get parsed into:
+// { title, keywords, summary, topics, mainContent, ... }
+
+// buildHandoffContext converts structured output back to a clean prompt:
+export function buildHandoffContext(structured: AgentStructuredOutput): string {
+  if (!structured) return ''
+  const parts: string[] = []
+  if (structured.title)    parts.push('Title: ' + structured.title)
+  if (structured.keywords) parts.push('Keywords: ' + structured.keywords.join(', '))
+  if (structured.summary)  parts.push('Summary:\n' + structured.summary)
+  // ...etc
+  return parts.join('\n\n')
+  // Benefit: next agent gets clean structured data instead of raw token soup
+}</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 5. MULTI-AGENT SYSTEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="agents">
+<h2>5. Multi-Agent System</h2>
+
+<p>NavniAI ships with <strong>8 built-in coding agents</strong> and supports <strong>unlimited custom agents</strong> for any domain (HR, Legal, Marketing, etc.).</p>
+
+<h3>Built-in System Agents</h3>
+<table>
+<tr><th>Agent</th><th>Icon</th><th>Purpose</th><th>Actions</th></tr>
+<tr><td>Code Generator</td><td>⚡</td><td>Generate new code and features</td><td>Create Feature, Custom Task</td></tr>
+<tr><td>Code Reviewer</td><td>🔍</td><td>Analyze code quality</td><td>Analyze Code, Custom Task</td></tr>
+<tr><td>Test Writer</td><td>🧪</td><td>Generate unit tests</td><td>Create Unit Tests, Custom Task</td></tr>
+<tr><td>Documenter</td><td>📚</td><td>Create documentation</td><td>Generate API Docs, Custom Task</td></tr>
+<tr><td>Debug Helper</td><td>🐛</td><td>Debug and fix errors</td><td>Debug Error, Fix Code, Custom Task</td></tr>
+<tr><td>Security Scanner</td><td>🔒</td><td>Scan for vulnerabilities</td><td>Scan Vulnerabilities, Custom Task</td></tr>
+<tr><td>Refactor Agent</td><td>🔄</td><td>Optimize and refactor code</td><td>Refactor Code, Custom Task</td></tr>
+<tr><td>DevOps Agent</td><td>⚙️</td><td>CI/CD and deployment</td><td>Create PR, Custom Task</td></tr>
+</table>
+
+<h3>Agent Data Model</h3>
+<pre>// components/WorkflowBuilder.tsx — Agent interface
+
+export interface Agent {
+  id: string           // Unique identifier
+  name: string         // Display name
+  icon: string         // Emoji icon
+  color: string        // Hex color for theming
+  description: string  // Short description
+  category: 'system' | 'custom'
+  systemPrompt?: string    // Custom agents only — the AI's role
+  actions?: AgentAction[]  // Available actions for this agent
+}
+
+export interface AgentAction {
+  id: string
+  label: string
+  inputs: {
+    key: string
+    label: string
+    type: 'text' | 'textarea'
+    placeholder: string
+    required?: boolean
+  }[]
+}</pre>
+
+<h3>Custom Agent Creation</h3>
+<p>Users can create domain-specific agents through a modal UI or install from pre-built templates spanning HR, Legal, Marketing, Finance, Education, Support, and Data domains:</p>
+
+<pre>// components/AgentPalette.tsx — Template installation
+
+const AGENT_TEMPLATES: AgentTemplate[] = [
+  {
+    name: 'Resume Screener',
+    icon: '👥',
+    color: '#8b5cf6',
+    domain: 'HR',
+    description: 'Screen resumes against job descriptions',
+    systemPrompt: 'You are an expert HR recruiter. You screen resumes '
+      + 'against job descriptions, evaluate candidate fit based on '
+      + 'skills, experience, and cultural alignment...',
+    actions: [
+      { id: 'screen_resume', label: 'Screen Resume' },
+      { id: 'rank_candidates', label: 'Rank Candidates' },
+      { id: 'execute', label: 'Custom Task' },
+    ],
+  },
+  // Contract Reviewer, Compliance Checker, Content Writer,
+  // SEO Analyst, Financial Analyst, Curriculum Designer,
+  // Support Agent, Data Analyst...
+]</pre>
+
+<div class="callout">
+<strong>🧠 AI Concept: System Prompts</strong>
+<p>A <strong>system prompt</strong> defines the AI's persona, expertise, and constraints. It's sent as the first message in every conversation. By giving each agent a specialized system prompt ("You are an expert HR recruiter..."), the same underlying LLM behaves differently for each role — this is the foundation of multi-agent architectures.</p>
+</div>
+
+<h3>Visual Node Rendering</h3>
+<p>Each agent on the canvas is rendered as a React Flow custom node with connection handles:</p>
+
+<pre>// components/AgentNode.tsx — Custom React Flow node
+
+export const AgentNode = memo(({ data, selected }: NodeProps) =&gt; {
+  const { agent, action, condition } = data
+
+  return (
+    &lt;div className={`px-4 py-3 rounded-md min-w-[220px] bg-card
+      border ${selected ? 'border-accent-300' : 'border-surface-300'}`}
+      style={{
+        boxShadow: selected
+          ? `0 8px 32px ${agent.color}20`
+          : '0 1px 4px rgba(0,0,0,0.06)',
+      }}
+    &gt;
+      {/* Target handle (input) */}
+      &lt;Handle type="target" position={Position.Top}
+        style={{ background: agent.color }} /&gt;
+
+      {/* Agent info */}
+      &lt;div className="flex items-center gap-2.5"&gt;
+        &lt;div style={{ background: agent.color + '18' }}&gt;
+          {agent.icon}
+        &lt;/div&gt;
+        &lt;span&gt;{agent.name}&lt;/span&gt;
+      &lt;/div&gt;
+
+      {/* Source handle (output) */}
+      &lt;Handle type="source" position={Position.Bottom}
+        style={{ background: agent.color }} /&gt;
+    &lt;/div&gt;
+  )
+})</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 6. REACT TOOL-USE LOOP -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="tools">
+<h2>6. ReAct Tool-Use Loop &amp; Agent Intelligence <span class="badge badge-purple">New in v2</span></h2>
+
+<p>In v1, agents were "prompt in → text out" boxes. In v2, they can <strong>reason about what tool to call</strong>, invoke it, observe the result, and continue reasoning until they have enough information. This is the ReAct (Reasoning + Acting) pattern.</p>
+
+<div class="callout">
+<strong>🧠 AI Concept: ReAct Pattern</strong>
+<p>ReAct interleaves chain-of-thought reasoning with tool actions. The LLM outputs a <em>Thought</em> (what do I need?), then an <em>Action</em> (call this tool with these arguments), receives an <em>Observation</em> (the tool's result), and reasons again. This loop continues until the LLM outputs a <em>Final Answer</em>. It's the basis of systems like LangChain Agents and OpenAI's tool_use.</p>
+</div>
+
+<h3>Tool Registry (<code>lib/agentTools.ts</code>)</h3>
+<p>Five tools are available, each with typed parameter definitions:</p>
+<table>
+<tr><th>Tool</th><th>Purpose</th><th>Agent Types</th></tr>
+<tr><td><code>web_search</code></td><td>Live web search (Serper → Brave → DuckDuckGo cascade)</td><td>researcher, seo_optimizer, social_writer</td></tr>
+<tr><td><code>rag_search</code></td><td>Semantic search over uploaded knowledge base</td><td>researcher, writer, reviewer</td></tr>
+<tr><td><code>calculator</code></td><td>Safe arithmetic evaluation (e.g. "100 * 1.15 / 3")</td><td>seo_optimizer</td></tr>
+<tr><td><code>json_extract</code></td><td>Extract named fields from JSON or structured text</td><td>writer, reviewer</td></tr>
+<tr><td><code>scratchpad</code></td><td>Read/write short-term notes shared across all steps in a run</td><td>all agents</td></tr>
+</table>
+
+<h3>The ReAct Loop</h3>
+<pre>// lib/workflowExecutor.ts — runReActLoop (simplified)
+
+async function runReActLoop(
+  systemPrompt: string,
+  initialPrompt: string,
+  step: WorkflowStep,
+  payload: WorkflowPayload,
+  scratchpad: Map&lt;string, string&gt;,
+  onStream?: OnStreamCallback,
+): Promise&lt;{ text: string; provider: string; toolsUsed: ToolResult[] }&gt; {
+
+  const maxTurns = payload.maxReActTurns ?? 5
+  let conversation = initialPrompt
+  const toolsUsed: ToolResult[] = []
+
+  for (let turn = 0; turn &lt; maxTurns; turn++) {
+    if (payload.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+
+    // 1. LLM generates Thought + (optionally) ACTION calls
+    const { text, provider } = await callLLMOnce(systemPrompt, conversation, ...)
+
+    // 2. If LLM gave FINAL ANSWER — extract and return it
+    if (hasFinalAnswer(text)) return { text: extractFinalAnswer(text), ... }
+
+    // 3. Parse all ACTION: tool_name({...}) calls
+    const toolCalls = parseToolCalls(text)
+    if (toolCalls.length === 0) return { text, provider, toolsUsed }
+
+    // 4. Execute each tool, collect OBSERVATION
+    let observations = ''
+    for (const call of toolCalls) {
+      const result = await executeTool(call, scratchpad)
+      toolsUsed.push(result)
+      observations += `\nOBSERVATION [${call.tool}]: ${result.output}\n`
+      // Stream the tool result to the UI with a 🔧 marker
+      onStream?.(step.id, step.agent, `\n\n🔧 Tool: ${call.tool}\n${result.output}`, ...)
+    }
+
+    // 5. Append the exchange and loop back
+    conversation += '\n\n' + text + observations + '\nContinue. Use FINAL ANSWER: when ready.'
+  }
+
+  // Max turns reached — force a final answer
+  conversation += '\n\nProvide your FINAL ANSWER now.'
+  const final = await callLLMOnce(systemPrompt, conversation, ...)
+  return { text: extractFinalAnswer(final.text), provider: final.provider, toolsUsed }
+}</pre>
+
+<h3>Tool Prompt Injection</h3>
+<p>Before entering the ReAct loop, the tool list and usage instructions are appended to the agent's system prompt:</p>
+
+<pre>// lib/agentTools.ts — buildToolSystemPrompt (excerpt)
+
+// The LLM is trained to follow this format:
+`
+THOUGHT: I need to find current statistics about AI adoption.
+ACTION: web_search({"query": "AI adoption statistics 2026"})
+OBSERVATION: [result injected here by the executor]
+THOUGHT: Now I have what I need.
+FINAL ANSWER: Based on research, AI adoption has reached 72% of enterprises...
+`
+
+// ACTION lines are parsed with this regex:
+const re = /ACTION:\s*([a-z_]+)\s*\(\s*(\{[\s\S]*?\})\s*\)/gi
+// → matches tool name + JSON arguments in a single pass</pre>
+
+<h3>Default Tools per Agent Type</h3>
+<pre>// lib/agentTools.ts — AGENT_DEFAULT_TOOLS
+
+export const AGENT_DEFAULT_TOOLS: Record&lt;string, string[]&gt; = {
+  researcher:    ['web_search', 'rag_search', 'scratchpad'],
+  writer:        ['rag_search', 'scratchpad', 'json_extract'],
+  editor:        ['scratchpad'],
+  seo_optimizer: ['web_search', 'calculator', 'scratchpad'],
+  social_writer: ['web_search', 'scratchpad'],
+  reviewer:      ['rag_search', 'scratchpad'],
+  debugger:      ['web_search', 'rag_search'],
+}
+
+// Tools are injected only when payload.useTools !== false
+// Disable per-run: { workflow, inputs, useTools: false }</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 7. AGENT MEMORY & SELF-REFLECTION -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="memory">
+<h2>7. Agent Memory &amp; Self-Reflection <span class="badge badge-purple">New in v2</span></h2>
+
+<h3>Short-Term Memory: The Scratchpad</h3>
+<p>A <code>Map&lt;string, string&gt;</code> is created at the start of each workflow run and shared across <em>all</em> steps. Agents can write notes using the <code>scratchpad</code> tool and retrieve them in later steps — enabling cross-step context that doesn't have to go through the LLM's context window:</p>
+
+<pre>// lib/workflowExecutor.ts — Scratchpad lifecycle
+
+// Created once at run start, passed to every step
+const scratchpad: Scratchpad = new Map()
+
+// An agent mid-run might do:
+// ACTION: scratchpad({"action": "write", "key": "target_audience", "value": "B2B SaaS founders"})
+// → stored for the entire run
+
+// A later agent retrieves it:
+// ACTION: scratchpad({"action": "read", "key": "target_audience"})
+// → OBSERVATION: B2B SaaS founders</pre>
+
+<h3>Long-Term Memory: Cross-Run Persistence</h3>
+<p>At workflow completion, all scratchpad entries are persisted to the <code>AgentMemory</code> table in PostgreSQL using upsert — the same key for the same workflow/user updates in place:</p>
+
+<pre>// app/api/memory/route.ts — POST (persist scratchpad)
+
+const upserts = Object.entries(entries).map(([key, value]) =&gt;
+  prisma.agentMemory.upsert({
+    where: {
+      userId_workflowName_key: { userId, workflowName, key }
+    },
+    update: { value: String(value) },
+    create: { userId, workflowName, key, value: String(value) },
+  })
+)
+await Promise.all(upserts)
+
+// GET /api/memory?workflow=name → retrieve all persisted entries for that workflow
+// Future runs can pre-populate the scratchpad from previous run memory</pre>
+
+<h3>Self-Reflection / Output Validation</h3>
+<p>After each agent produces output, a lightweight <strong>critique pass</strong> runs via the LLM itself. If quality is scored below 7/10, the executor auto-retries once with the feedback injected:</p>
+
+<pre>// lib/workflowExecutor.ts — runSelfReflection
+
+const REFLECTION_PROMPT = `You are a quality reviewer. Score the output 1-10 across:
+- Completeness, Accuracy, Clarity, Relevance
+Respond EXACTLY:
+SCORE: &lt;number&gt;
+FEEDBACK: &lt;one-line critique&gt;
+VERDICT: PASS  (if score ≥ 7)
+VERDICT: FAIL  (if score &lt; 7)`
+
+// After getting initial output from callStepLLM:
+const reflection = await runSelfReflection(output, step, payload)
+if (!reflection.pass) {
+  // Stream a visible marker to the UI
+  onStream?.(step.id, step.agent,
+    `\n\n🔄 Self-reflection (${reflection.score}/10): ${reflection.feedback}\nRetrying...\n`, '')
+
+  // Retry with feedback injected into the inputs
+  const retryResult = await callStepLLM(
+    { ...step, inputs: { ...step.inputs, __feedback: reflection.feedback } },
+    outputs, payload, onStream, scratchpad
+  )
+  output = retryResult.output  // Replace with improved version
+}</pre>
+
+<div class="callout">
+<strong>💡 AI Concept: LLM-as-Judge</strong>
+<p>Using one LLM call to evaluate the output of another is called "LLM-as-Judge." It's surprisingly effective at catching shallow, incomplete, or off-topic outputs — especially for structured tasks. The key risk is that the judge can share the same biases as the generator. A production system would use a different model family for the judge to minimize this.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 8. WEB SEARCH SYSTEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="search">
+<h2>8. Web Search System (Multi-Provider) <span class="badge badge-green">New in v2</span></h2>
+
+<p>NavniAI's web search tool cascades through four providers so agents always have access to live web data regardless of which API keys are configured:</p>
+
+<table>
+<tr><th>Provider</th><th>Mode</th><th>API Key</th><th>Notes</th></tr>
+<tr><td><strong>Serper</strong></td><td>Quick Search</td><td><code>SERPER_API_KEY</code></td><td>Google results — primary</td></tr>
+<tr><td><strong>Brave Search</strong></td><td>Quick Search</td><td><code>BRAVE_SEARCH_API_KEY</code></td><td>Independent index</td></tr>
+<tr><td><strong>DuckDuckGo</strong></td><td>Quick Search</td><td>None required</td><td>HTML scraping fallback — always available</td></tr>
+<tr><td><strong>Tavily</strong></td><td>Deep Research</td><td><code>TAVILY_API_KEY</code></td><td>AI-extracted answer + sources</td></tr>
+</table>
+
+<pre>// lib/webSearch.ts — Cascade fallback (simplified)
+
+export async function quickSearch(
+  query: string,
+  numResults: number = 5
+): Promise&lt;SearchResponse&gt; {
+  // Try Serper first (Google results)
+  if (process.env.SERPER_API_KEY) {
+    try { return await searchWithSerper(query, numResults) } catch {}
+  }
+
+  // Try Brave Search
+  if (process.env.BRAVE_SEARCH_API_KEY) {
+    try { return await searchWithBrave(query, numResults) } catch {}
+  }
+
+  // DuckDuckGo — no key required, always last resort
+  return await searchWithDuckDuckGo(query, numResults)
+}
+
+// Deep Research — Tavily AI extraction
+export async function fullResearch(query: string): Promise&lt;DeepResearchResult&gt; {
+  // Returns: { answer: string, sources: [{title, url, content}] }
+  // Tavily reads and synthesizes the full page content, not just snippets
+}</pre>
+
+<div class="callout">
+<strong>💡 Design: Prompt Augmentation vs. Native Function Calling</strong>
+<p>NavniAI's tools work via <strong>prompt augmentation</strong> — the tool result is injected as text into the LLM's conversation. This is provider-agnostic (works with Ollama, Groq, any model). Native function calling (OpenAI <code>tool_use</code>, Anthropic <code>tool_use</code>) is faster and more reliable when available, but locks you to specific providers. The prompt-based approach trades some reliability for universal compatibility.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 9. AUTHENTICATION & MIDDLEWARE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="auth">
+<h2>9. Authentication &amp; Middleware</h2>
+
+<p>NavniAI uses <strong>NextAuth.js</strong> with a Credentials provider for email/password authentication, backed by bcrypt hashing and Prisma for user storage.</p>
+
+<h3>Auth Configuration</h3>
+<pre>// lib/auth.ts — NextAuth configuration
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        })
+        if (!user?.password) return null
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
+        if (!isValid) return null
+
+        return { id: user.id, email: user.email, name: user.name }
+      },
+    }),
+  ],
+  session: { strategy: 'jwt' },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.id = user.id
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) (session.user as any).id = token.id
+      return session
+    },
+  },
+}</pre>
+
+<h3>Route Protection via Middleware</h3>
+<pre>// middleware.ts — Protect authenticated routes
+
+import { withAuth } from 'next-auth/middleware'
+
+export default withAuth({
+  pages: { signIn: '/login' },
+})
+
+export const config = {
+  matcher: [
+    '/dashboard/:path*',
+    '/workflow/:path*',
+    '/settings/:path*',
+  ],
+}</pre>
+
+<div class="callout">
+<strong>💡 Pattern: JWT + Middleware</strong>
+<p>NextAuth issues JWTs stored in HTTP-only cookies. The middleware intercepts every request to protected routes and redirects unauthenticated users to <code>/login</code>. This runs at the Edge, before the page renders — zero flash of authenticated content.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 7. DUAL-THEME UI SYSTEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="theme">
+<h2>10. Dual-Theme UI System ("Calm Intelligence")</h2>
+
+<p>NavniAI uses a <strong>CSS Variable + Tailwind</strong> theming system that supports light and dark modes with full Tailwind opacity support. The design language is called "Calm Intelligence" — minimalist, high-contrast, editorial.</p>
+
+<h3>CSS Variable Architecture</h3>
+<pre>/* app/globals.css — Theme variable definitions */
+
+:root {
+  /* Surface — warm cream */
+  --surface-50:  250 249 247;
+  --surface-100: 247 246 242;
+  --surface-200: 238 237 234;
+  --surface-300: 226 224 220;
+  --surface-400: 209 207 201;
+  /* Ink — deep charcoal text */
+  --ink-300: 138 138 138;
+  --ink-500: 74 74 74;
+  --ink-700: 26 26 26;
+  /* Accent — brand blue */
+  --accent-500: 47 111 237;
+  /* Card */
+  --card: 255 255 255;
+}
+
+.dark {
+  --surface-50:  22 22 28;
+  --surface-100: 14 14 18;
+  --surface-300: 44 44 52;
+  --ink-300: 140 140 150;
+  --ink-500: 195 195 200;
+  --ink-700: 242 242 244;
+  --accent-500: 65 135 248;
+  --card: 22 22 28;
+}</pre>
+
+<div class="callout warn">
+<strong>⚠️ Key Insight: Raw RGB Triplets</strong>
+<p>Variables are defined as raw RGB triplets (<code>255 255 255</code>) instead of hex codes (<code>#ffffff</code>). This is <em>required</em> for Tailwind's opacity modifier syntax to work: <code>bg-surface-300/50</code> compiles to <code>rgb(var(--surface-300) / 0.5)</code>. If you used hex, the <code>/ 0.5</code> would produce invalid CSS.</p>
+</div>
+
+<h3>Tailwind Configuration</h3>
+<pre>// tailwind.config.ts — Variable-driven color tokens
+
+const config: Config = {
+  darkMode: 'class',  // Toggle via .dark class on &lt;html&gt;
+  theme: {
+    extend: {
+      colors: {
+        surface: {
+          DEFAULT: 'rgb(var(--surface-100) / &lt;alpha-value&gt;)',
+          50:  'rgb(var(--surface-50) / &lt;alpha-value&gt;)',
+          100: 'rgb(var(--surface-100) / &lt;alpha-value&gt;)',
+          200: 'rgb(var(--surface-200) / &lt;alpha-value&gt;)',
+          300: 'rgb(var(--surface-300) / &lt;alpha-value&gt;)',
+          400: 'rgb(var(--surface-400) / &lt;alpha-value&gt;)',
+        },
+        ink: {
+          // 50 through 700 — same pattern
+        },
+        accent: {
+          // 50 through 700 — same pattern
+        },
+        card: 'rgb(var(--card) / &lt;alpha-value&gt;)',
+      },
+    },
+  },
+}</pre>
+
+<h3>Theme Toggle Component</h3>
+<pre>// components/ThemeToggle.tsx
+
+'use client'
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
+
+export default function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() =&gt; setMounted(true), [])
+
+  if (!mounted) {
+    // Skeleton to avoid hydration mismatch
+    return &lt;button className="p-2 rounded-md w-9 h-9" /&gt;
+  }
+
+  return (
+    &lt;button onClick={() =&gt;
+      setTheme(theme === 'dark' ? 'light' : 'dark')
+    }&gt;
+      {theme === 'dark' ? '☀️' : '🌙'}
+    &lt;/button&gt;
+  )
+}</pre>
+
+<h3>Provider Wrapper</h3>
+<pre>// components/Providers.tsx — Theme + Session providers
+
+'use client'
+import { SessionProvider } from 'next-auth/react'
+import { ThemeProvider } from 'next-themes'
+
+export default function Providers({ children }) {
+  return (
+    &lt;ThemeProvider attribute="class" defaultTheme="light"
+                  enableSystem={false}&gt;
+      &lt;SessionProvider&gt;{children}&lt;/SessionProvider&gt;
+    &lt;/ThemeProvider&gt;
+  )
+}</pre>
+
+<div class="callout">
+<strong>💡 Hydration Mismatch Prevention</strong>
+<p>The <code>&lt;html suppressHydrationWarning&gt;</code> attribute is required because <code>next-themes</code> injects a <code>class="dark"</code> on the server's HTML that may not match the client's preference. Without this, React would throw a hydration error. The <code>ThemeToggle</code> also renders a skeleton until mounted for the same reason.</p>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 8. DATABASE & VECTOR STORAGE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="db">
+<h2>11. Database &amp; Vector Storage (+ Run Persistence)</h2>
+
+<p>NavniAI uses <strong>PostgreSQL on Neon</strong> (serverless) with the <strong>pgvector</strong> extension for storing and querying 768-dimensional embedding vectors alongside relational data.</p>
+
+<h3>Prisma Schema</h3>
+<pre>// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  password  String
+  workflows Workflow[]
+  documents Document[]
+  createdAt DateTime   @default(now())
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  nodes       Json     // React Flow nodes array
+  edges       Json     // React Flow edges array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id])
+  name       String
+  type       String
+  size       Int
+  tags       String          @default("[]")
+  chunkCount Int
+  chunks     DocumentChunk[]
+  createdAt  DateTime        @default(now())
+}
+
+model DocumentChunk {
+  id         String   @id
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id],
+                       onDelete: Cascade)
+  content    String
+  embedding  Unsupported("vector(768)")  // pgvector type!
+  metadata   String   @default("{}")
+  chunkIndex Int
+}
+
+// ── Run Persistence (v2) ─────────────────────────────────────────
+
+model WorkflowRun {
+  id             String       @id @default(cuid())
+  workflowId     String?
+  userId         String?      // null = guest run
+  pipelineType   String       @default("custom")
+  name           String       @default("Untitled Run")
+  status         String       @default("running")
+  briefJson      String?      // JSON blob of inputs/brief
+  executionTime  Float?       // seconds
+  stepsTotal     Int          @default(0)
+  stepsCompleted Int          @default(0)
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+  stepResults    StepResult[]
+
+  @@index([userId])
+  @@index([pipelineType])
+}
+
+model StepResult {
+  id             String      @id @default(cuid())
+  runId          String
+  run            WorkflowRun @relation(fields: [runId], references: [id],
+                              onDelete: Cascade)
+  agentId        String      // e.g. "researcher"
+  agentName      String
+  orderIndex     Int
+  status         String      @default("completed")
+  outputText     String?
+  structuredJson String?     // JSON of AgentStructuredOutput
+  provider       String?     // which LLM provider served this step
+  executionTime  Float?
+
+  @@index([runId])
+}
+
+// ── Agent Memory — cross-run scratchpad persistence (v2) ─────────
+
+model AgentMemory {
+  id           String   @id @default(cuid())
+  userId       String?
+  workflowName String
+  key          String
+  value        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // One entry per (user, workflow, key) — upserted on each run
+  @@unique([userId, workflowName, key])
+  @@index([userId, workflowName])
+}</pre>
+
+<div class="callout">
+<strong>🧠 AI Concept: Vector Databases</strong>
+<p>Traditional databases search by exact match or range. Vector databases enable <strong>semantic search</strong> — finding records by meaning, not keywords. The <code>vector(768)</code> column stores 768-dimensional float arrays. pgvector adds index types (IVFFlat, HNSW) and distance operators (<code>&lt;=&gt;</code> cosine, <code>&lt;-&gt;</code> L2) to PostgreSQL.</p>
+</div>
+
+<h3>Prisma + pgvector Integration</h3>
+<p>Since Prisma doesn't natively support the <code>vector</code> type, NavniAI uses <code>Unsupported("vector(768)")</code> in the schema and raw SQL for insert/query operations:</p>
+
+<pre>// Inserting an embedding (app/api/rag/upload/route.ts)
+const vectorStr = `[${embedding.join(',')}]`
+
+await prisma.$executeRawUnsafe(
+  `INSERT INTO "DocumentChunk"
+   (id, "documentId", content, embedding, metadata, "chunkIndex")
+   VALUES ($1, $2, $3, $4::vector, $5, $6)`,
+  chunkId, documentId, text, vectorStr, metadataJson, index
+)
+
+// The $4::vector cast converts the string "[0.1, 0.2, ...]"
+// into a native pgvector type for storage and indexing.</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 9. API ROUTES REFERENCE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="api">
+<h2>12. API Routes Reference</h2>
+
+<table>
+<tr><th>Route</th><th>Method</th><th>Auth</th><th>Purpose</th></tr>
+<tr><td><code>/api/auth/[...nextauth]</code></td><td>GET/POST</td><td>—</td><td>NextAuth.js handler (login, session, etc.)</td></tr>
+<tr><td><code>/api/auth/register</code></td><td>POST</td><td>—</td><td>Create account — hashes password, inserts User in DB</td></tr>
+<tr><td><code>/api/rag/upload</code></td><td>POST</td><td>✅</td><td>Upload document → chunk → embed → store in pgvector</td></tr>
+<tr><td><code>/api/rag/search</code></td><td>POST</td><td>✅</td><td>Query → embed → cosine search → return top-K chunks</td></tr>
+<tr><td><code>/api/rag/documents</code></td><td>GET</td><td>✅</td><td>List user's uploaded documents</td></tr>
+<tr><td><code>/api/runs</code></td><td>POST</td><td>optional</td><td><span class="badge badge-blue">v2</span> Save a completed workflow run + step results to DB</td></tr>
+<tr><td><code>/api/runs</code></td><td>GET</td><td>optional</td><td><span class="badge badge-blue">v2</span> List runs (filtered by authenticated user); returns stats</td></tr>
+<tr><td><code>/api/runs/[id]</code></td><td>DELETE</td><td>optional</td><td><span class="badge badge-blue">v2</span> Delete a specific run and its step results</td></tr>
+<tr><td><code>/api/memory</code></td><td>POST</td><td>optional</td><td><span class="badge badge-purple">v2</span> Upsert scratchpad entries into AgentMemory table</td></tr>
+<tr><td><code>/api/memory</code></td><td>GET</td><td>optional</td><td><span class="badge badge-purple">v2</span> Retrieve persisted memory for a named workflow</td></tr>
+<tr><td><code>/api/search</code></td><td>GET</td><td>—</td><td><span class="badge badge-green">v2</span> Proxy web search (Serper → Brave → DuckDuckGo cascade)</td></tr>
+<tr><td><code>/api/workflows</code></td><td>GET/POST</td><td>✅</td><td>List or create workflows (nodes + edges as JSON)</td></tr>
+<tr><td><code>/api/workflows/[id]</code></td><td>GET/PUT/DELETE</td><td>✅</td><td>Read, update, or delete a specific workflow</td></tr>
+</table>
+
+<h3>Dual-Write Pattern <span class="badge badge-blue">v2</span></h3>
+<p>Every completed run is saved to both <code>localStorage</code> (instant, offline) and PostgreSQL (source of truth). The dashboard reads from the API first and falls back to <code>localStorage</code>:</p>
+<div class="diagram">Workflow completes
+       │
+       ├──▶ saveToLocalStorage(run)     ← instant (sync), offline-capable
+       │
+       └──▶ POST /api/runs              ← async, user-scoped, survives device changes
+                 │
+                 └──▶ WorkflowRun row + StepResult rows (one per agent step)
+
+Dashboard load:
+  GET /api/runs  (authenticated → user's runs only)
+       │  success? → render DB data
+       │  fail?    → fall back to localStorage cache</div>
+
+<h3>Upload Pipeline (Detailed Flow)</h3>
+<div class="diagram">User uploads file.txt
+       │
+       ▼
+┌──────────────┐
+│ Parse content │  parseFileContent(content, ext)
+│ by extension  │  Handles .txt, .md, .csv
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ Chunk text    │  chunkText(parsed, 500, 50)
+│ 500 chars,    │  50-char overlap
+│ sentence-aware│
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ Generate      │  generateEmbeddings(chunks, options)
+│ embeddings    │  Tier 1→2→3 fallback
+│ (768-dim)     │
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│ Store in DB   │  Document record + DocumentChunk rows
+│ (pgvector)    │  Raw SQL INSERT with ::vector cast
+└──────────────┘</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 10. AI CONCEPTS GLOSSARY -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="concepts">
+<h2>13. AI Concepts Glossary</h2>
+
+<p>A reference of all AI and software architecture concepts implemented in NavniAI.</p>
+
+<h3>Large Language Models (LLMs)</h3>
+<p>Neural networks trained on vast text corpora that generate human-like text. NavniAI uses them as the "brain" inside each agent. Different providers (OpenAI, Anthropic, etc.) offer different models with varying capabilities, speed, and cost trade-offs.</p>
+
+<h3>Embeddings</h3>
+<p>Dense vector representations of text where semantically similar texts have vectors pointing in similar directions. NavniAI uses 768-dimensional embeddings. The number 768 was chosen because it's the output dimension of both <code>nomic-embed-text</code> (Ollama) and <code>text-embedding-004</code> (Gemini), ensuring vector compatibility across tiers.</p>
+
+<h3>Cosine Similarity</h3>
+<p>Measures the angle between two vectors, producing a score from -1 to 1. In practice, embedding vectors are usually positive, so scores range 0 to 1. NavniAI uses this to find the most relevant document chunks for a given query.</p>
+<pre>// Cosine similarity formula:
+// similarity = (A · B) / (||A|| × ||B||)
+//
+// pgvector operator: &lt;=&gt; returns cosine distance (1 - similarity)
+// So: similarity = 1 - (embedding &lt;=&gt; query_vector)</pre>
+
+<h3>Retrieval-Augmented Generation (RAG)</h3>
+<p>A pattern that combines information retrieval with text generation. Instead of relying solely on the LLM's training data, RAG fetches relevant context from a database at query time and includes it in the prompt. This grounds the LLM's response in actual data, reducing hallucinations.</p>
+
+<h3>Prompt Engineering</h3>
+<p>The practice of crafting effective prompts to get desired behavior from LLMs. In NavniAI, each agent has a <strong>system prompt</strong> defining its role, and the workflow executor constructs <strong>user prompts</strong> by combining action templates, resolved input variables, and optional RAG context.</p>
+
+<h3>Multi-Agent Orchestration</h3>
+<p>Running multiple specialized AI agents in a coordinated pipeline. Each agent handles one task, and outputs flow to the next agent. This is more effective than a single general-purpose prompt because: (1) each prompt is focused and shorter, (2) the system is modular, and (3) different steps can use different models or providers.</p>
+
+<h3>Directed Acyclic Graphs (DAGs)</h3>
+<p>A graph with directed edges and no cycles. NavniAI workflows are DAGs — each edge goes from one node to another (directed), and you can't create loops (acyclic). Topological sorting of a DAG produces a linear execution order where every dependency is satisfied before execution.</p>
+
+<h3>Provider Fallback / Circuit Breaker</h3>
+<p>A resilience pattern where if the primary service fails, the system automatically tries alternatives. NavniAI's <code>callLLMWithFallback</code> implements this by iterating through configured providers until one succeeds. This ensures the application degrades gracefully instead of failing completely.</p>
+
+<h3>Vector Database Indexing</h3>
+<p>pgvector supports two index types for approximate nearest neighbor (ANN) search:</p>
+<ul>
+<li><strong>IVFFlat</strong>: Inverted file index — partitions vectors into clusters, searches only nearby clusters. Fast to build, good for medium datasets.</li>
+<li><strong>HNSW</strong>: Hierarchical navigable small world — graph-based index with better recall. Slower to build but faster at query time for large datasets.</li>
+</ul>
+
+<h3>CSS Variable Theming</h3>
+<p>A pattern where colors are defined as CSS custom properties (<code>--surface-300</code>) instead of hardcoded values. By toggling a class on the root element (<code>.dark</code>), all colors switch simultaneously. Combined with Tailwind's <code>rgb(var() / &lt;alpha-value&gt;)</code> syntax, this enables full opacity control with theme-aware colors.</p>
+
+<h3>Hydration</h3>
+<p>In server-rendered React (Next.js), the server generates HTML, and the client "hydrates" it by attaching event handlers. If the server HTML differs from what the client would render (e.g., theme class mismatch), React throws a hydration error. <code>suppressHydrationWarning</code> tells React to ignore this specific mismatch.</p>
+
+<h3>ReAct (Reasoning + Acting) <span class="badge badge-purple">v2</span></h3>
+<p>A prompting strategy where the LLM alternates between generating reasoning traces (<em>Thought</em>) and executable actions (<em>Action</em>). After executing an action, the result (<em>Observation</em>) is fed back to the LLM, which reasons again. This loop continues until the LLM produces a <em>Final Answer</em>. ReAct agents are significantly more capable than single-turn prompting because they can gather, verify, and synthesize information across multiple tool calls.</p>
+
+<h3>Tool Use / Function Calling <span class="badge badge-purple">v2</span></h3>
+<p>Giving LLMs the ability to invoke external functions (tools) during generation. NavniAI implements this via <strong>prompt augmentation</strong> — the tool list and usage format are injected into the system prompt, and the executor parses <code>ACTION: tool_name({...})</code> markers from the LLM's output. Native function calling (OpenAI's <code>tools</code>, Anthropic's <code>tool_use</code>) is more structured but provider-specific. Prompt-based tool use works with any model.</p>
+
+<h3>Agent Memory <span class="badge badge-purple">v2</span></h3>
+<p>Agents need memory at three timescales: (1) <strong>In-context</strong> — the conversation history within one LLM call, limited by the model's context window. (2) <strong>Short-term</strong> — the shared scratchpad across all steps in one workflow run, implemented as a <code>Map&lt;string, string&gt;</code>. (3) <strong>Long-term</strong> — persisted entries in the <code>AgentMemory</code> PostgreSQL table, surviving across runs. NavniAI implements all three.</p>
+
+<h3>Self-Reflection / LLM-as-Judge <span class="badge badge-purple">v2</span></h3>
+<p>Using one LLM call to evaluate the quality of output produced by another. The "judge" scores the output on dimensions like completeness, accuracy, and relevance. If quality falls below a threshold, the system auto-retries with the judge's feedback injected as additional context. Risks: the judge may share the generator's biases; using a different model family for evaluation reduces this. In NavniAI, the same model judges its own output, which works as a lightweight quality gate but may miss deeper issues.</p>
+
+<h3>Exponential Backoff <span class="badge badge-blue">v2</span></h3>
+<p>A retry strategy where wait time doubles between attempts: 1 s → 2 s → 4 s. This prevents <em>thundering herd</em> — a surge of simultaneous retries that overwhelm a recovering service. NavniAI applies this per LLM provider before falling to the next provider in the fallback chain. <code>AbortError</code> is always propagated immediately, never retried.</p>
+
+<h3>AbortController / AbortSignal <span class="badge badge-blue">v2</span></h3>
+<p>A browser-native API for cancelling asynchronous operations. An <code>AbortController</code> creates a paired <code>AbortSignal</code>. Calling <code>controller.abort()</code> fires the signal's <code>abort</code> event, which all <code>fetch()</code> calls listening to that signal will immediately reject with <code>DOMException('AbortError')</code>. NavniAI threads the signal from the user's Cancel button all the way through the executor → LLM fallback chain → individual provider fetch calls, ensuring clean, immediate cancellation with no dangling requests.</p>
+
+<h3>Parallel Workflow Execution <span class="badge badge-blue">v2</span></h3>
+<p>When multiple workflow steps have all their dependencies satisfied at the same time (parallel branches), they can run concurrently with <code>Promise.all</code>. This halves wall-clock time for branching pipelines (e.g., SEO + Social steps running simultaneously after a Writer step). The executor falls back to sequential execution only when Human-in-the-Loop review is active, because the user must approve each step before the next begins.</p>
+
+<h3>Dual-Write Persistence <span class="badge badge-blue">v2</span></h3>
+<p>Writing the same data to two stores simultaneously: <code>localStorage</code> for instant offline access, and PostgreSQL for durability and cross-device availability. The dashboard reads from the API (DB) first and falls back to <code>localStorage</code> if the network is unavailable. This pattern provides both low latency (local) and reliability (remote) without requiring a service worker or offline-first framework.</p>
+</section>
+
+<footer>
+<p>NavniAI Learning Document — Updated May 2026 · v2</p>
+<p>Built with Next.js 14 · React Flow · Prisma · pgvector · next-themes · ReAct Tool Use · Parallel Orchestration</p>
+</footer>
+
+</div>
+</body>
+</html>

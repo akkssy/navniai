@@ -1,15 +1,74 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
 import ThemeToggle from '@/components/ThemeToggle'
+import { listRuns as listLocalRuns, getRunStats as getLocalStats, deleteRun as deleteLocalRun, clearAllRuns as clearLocalRuns, type StoredRun, type RunStats } from '@/lib/runStorage'
+
+// Normalize API run to StoredRun shape
+function apiRunToStored(run: any): StoredRun {
+  return {
+    id: run.id,
+    pipelineType: run.pipelineType || 'custom',
+    name: run.name || 'Untitled',
+    status: run.status || 'completed',
+    briefJson: run.briefJson ? (typeof run.briefJson === 'string' ? JSON.parse(run.briefJson) : run.briefJson) : undefined,
+    executionTime: run.executionTime || 0,
+    stepsTotal: run.stepsTotal || 0,
+    stepsCompleted: run.stepsCompleted || 0,
+    startedAt: run.startedAt || new Date().toISOString(),
+    completedAt: run.completedAt || undefined,
+    steps: (run.stepResults || run.steps || []).map((s: any, i: number) => ({
+      stepId: s.stepId || `step-${i}`,
+      agentId: s.agentId || 'unknown',
+      agentName: s.agentName || '',
+      action: s.action || 'execute',
+      status: s.status || 'completed',
+      output: s.output || '',
+      provider: s.provider || 'simulated',
+      structured: s.structuredJson ? (typeof s.structuredJson === 'string' ? JSON.parse(s.structuredJson) : s.structuredJson) : (s.structured ?? null),
+      orderIndex: s.orderIndex ?? i,
+    })),
+  }
+}
 
 export default function Dashboard() {
   const { data: session } = useSession()
   const workflows = PIPELINE_TEMPLATES
+  const [recentRuns, setRecentRuns] = useState<StoredRun[]>([])
+  const [stats, setStats] = useState<RunStats>({ totalRuns: 0, completedRuns: 0, failedRuns: 0, avgExecutionTime: 0 })
+  const [loadingRuns, setLoadingRuns] = useState(true)
+  const [usingApi, setUsingApi] = useState(false)
+
+  const refreshRuns = useCallback(async () => {
+    // Try API first (PostgreSQL = source of truth)
+    try {
+      const res = await fetch('/api/runs?limit=10')
+      const data = await res.json()
+      if (data.ok && data.runs) {
+        setRecentRuns(data.runs.map(apiRunToStored))
+        setStats(data.stats || { totalRuns: 0, completedRuns: 0, failedRuns: 0, avgExecutionTime: 0 })
+        setUsingApi(true)
+        setLoadingRuns(false)
+        return
+      }
+    } catch {
+      // API unavailable — fall back to localStorage
+    }
+    // Fallback: localStorage
+    setRecentRuns(listLocalRuns(10))
+    setStats(getLocalStats())
+    setUsingApi(false)
+    setLoadingRuns(false)
+  }, [])
+
+  useEffect(() => {
+    refreshRuns()
+  }, [refreshRuns])
 
   return (
     <div className="min-h-screen">
@@ -57,15 +116,63 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatCard label="Total Pipelines" value={String(workflows.length)} accent="text-accent-500" />
-          <StatCard label="Active" value={String(workflows.filter(w => w.status === 'active').length)} accent="text-emerald-600" />
-          <StatCard label="Total Runs" value={String(workflows.reduce((s, w) => s + w.runs, 0).toLocaleString())} accent="text-amber-600" />
-          <StatCard label="Agents Used" value={String(new Set(workflows.flatMap(w => w.steps.map(s => s.agentId))).size)} accent="text-violet-600" />
+          <StatCard label="Completed Runs" value={String(stats.completedRuns)} accent="text-emerald-600" />
+          <StatCard label="Total Runs" value={String(stats.totalRuns)} accent="text-amber-600" />
+          <StatCard label="Avg Time" value={stats.avgExecutionTime > 0 ? `${stats.avgExecutionTime.toFixed(1)}s` : '—'} accent="text-violet-600" />
         </div>
+
+        {/* Recent Runs */}
+        {recentRuns.length > 0 && (
+          <div className="glass-card overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-surface-300 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-700">Recent Runs</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-ink-400">{stats.totalRuns} total</span>
+                <button
+                  onClick={async () => {
+                    if (!confirm('Clear all run history?')) return
+                    clearLocalRuns()
+                    // Also clear from API if available
+                    for (const run of recentRuns) {
+                      fetch(`/api/runs/${run.id}`, { method: 'DELETE' }).catch(() => {})
+                    }
+                    refreshRuns()
+                  }}
+                  className="text-[10px] text-red-400 hover:text-red-600 transition"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+            <div className="divide-y divide-surface-300">
+              {recentRuns.map((run) => (
+                <RecentRunRow key={run.id} run={run} onDelete={async () => {
+                  deleteLocalRun(run.id)
+                  fetch(`/api/runs/${run.id}`, { method: 'DELETE' }).catch(() => {})
+                  refreshRuns()
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loadingRuns && recentRuns.length === 0 && (
+          <div className="glass-card p-8 text-center mb-8">
+            <p className="text-sm text-ink-400 animate-pulse">Loading run history...</p>
+          </div>
+        )}
+
+        {!loadingRuns && recentRuns.length === 0 && (
+          <div className="glass-card p-8 text-center mb-8">
+            <p className="text-3xl mb-2 opacity-30">🚀</p>
+            <p className="text-sm text-ink-400">No runs yet. Create a content pipeline or workflow to get started.</p>
+          </div>
+        )}
 
         {/* Workflows List */}
         <div className="glass-card overflow-hidden">
           <div className="px-6 py-4 border-b border-surface-300">
-            <h2 className="text-sm font-semibold text-ink-700">Your Workflows</h2>
+            <h2 className="text-sm font-semibold text-ink-700">Pipeline Templates</h2>
           </div>
           <div className="divide-y divide-surface-300">
             {workflows.map((workflow) => (
@@ -76,8 +183,8 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <QuickAction title="Content Pipeline" description="Generate content packages" href="/workflow/builder" icon="✨" />
           <QuickAction title="Browse Templates" description="Pre-built workflow templates" href="/templates" icon="📚" />
-          <QuickAction title="Workflow Builder" description="Create custom workflows visually" href="/workflow/builder" icon="🎨" />
           <QuickAction title="Knowledge Base" description="Upload docs for RAG context" href="/knowledge" icon="🧠" />
           <QuickAction title="Documentation" description="Learn about agent orchestration" href="/docs" icon="📖" />
         </div>
@@ -156,6 +263,68 @@ function WorkflowRow({ workflow }: { workflow: any }) {
       </div>
     </div>
   )
+}
+
+function RecentRunRow({ run, onDelete }: { run: StoredRun; onDelete: () => void }) {
+  const typeIcon = run.pipelineType === 'content' ? '✨' : '🔧'
+  const timeAgo = getTimeAgo(run.startedAt)
+  const uniqueAgents = [...new Set(run.steps.map(s => s.agentName || s.agentId))]
+
+  return (
+    <div className="px-6 py-4 hover:bg-surface-50 transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span>{typeIcon}</span>
+            <h3 className="text-sm font-medium text-ink-700">{run.name}</h3>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+              run.status === 'completed'
+                ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                : 'bg-red-50 dark:bg-red-950 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800'
+            }`}>
+              {run.status}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 mt-1 text-xs text-ink-400">
+            <span className="flex items-center gap-1">
+              <ClockIcon className="h-3.5 w-3.5" />
+              {timeAgo}
+            </span>
+            <span>{run.stepsCompleted}/{run.stepsTotal} steps</span>
+            {run.executionTime > 0 && <span>{run.executionTime.toFixed(1)}s</span>}
+            <span className="text-ink-300">{uniqueAgents.slice(0, 3).join(' → ')}{uniqueAgents.length > 3 ? ` +${uniqueAgents.length - 3}` : ''}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href={`/workflow/builder?run=${run.id}`} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+            <EyeIcon className="h-3.5 w-3.5" />
+            View
+          </Link>
+          <Link href={`/workflow/builder`} className="btn-secondary text-xs px-3 py-1.5">
+            🔄 Re-run
+          </Link>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            className="text-ink-300 hover:text-red-500 transition p-1.5 rounded-md hover:bg-surface-100"
+            title="Delete run"
+          >
+            <TrashIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function getTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
 function QuickAction({ title, description, href, icon }: { title: string, description: string, href: string, icon: string }) {

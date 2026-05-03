@@ -7,7 +7,8 @@ import { WorkflowBuilder } from '@/components/WorkflowBuilder'
 function BuilderWithTemplate() {
   const searchParams = useSearchParams()
   const templateId = searchParams.get('template') || undefined
-  return <WorkflowBuilder templateId={templateId} />
+  const runId = searchParams.get('run') || undefined
+  return <WorkflowBuilder templateId={templateId} runId={runId} />
 }
 
 export default function WorkflowBuilderPage() {
