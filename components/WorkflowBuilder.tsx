@@ -549,32 +549,67 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
     abortControllerRef.current = abortController
     setIsRunning(true)
     setRunResult(null)
+    setStreamingText({})
+    streamingTextRef.current = {}
+    setCheckpointRequest(null)
+    checkpointResolverRef.current = null
+
+    // Build progress entries from current nodes so the pipeline tracker renders
+    const workflow = buildWorkflowPayload()
+    setPipelineProgress(workflow.steps.map((step, i) => ({
+      stepId: step.id,
+      agentId: step.agent,
+      agentName: step.agent_name || step.agent,
+      status: 'pending' as const,
+      stepIndex: i,
+      totalSteps: workflow.steps.length,
+    })))
+
+    const handleProgress = (progress: StepProgress) => {
+      setPipelineProgress(prev => prev.map(p =>
+        p.stepId === progress.stepId
+          ? { ...p, ...progress }
+          : p
+      ))
+    }
+
+    let streamRAF: number | null = null
+    const handleStream: OnStreamCallback = (_stepId, agentId, _chunk, fullText) => {
+      streamingTextRef.current = { ...streamingTextRef.current, [agentId]: fullText }
+      if (!streamRAF) {
+        streamRAF = requestAnimationFrame(() => {
+          setStreamingText({ ...streamingTextRef.current })
+          streamRAF = null
+        })
+      }
+    }
+
+    const handleCheckpoint: OnCheckpointCallback = (request) => {
+      return new Promise<CheckpointDecision>((resolve) => {
+        setCheckpointRequest(request)
+        setCheckpointEditText(request.output)
+        setCheckpointEditing(false)
+        checkpointResolverRef.current = resolve
+      })
+    }
 
     try {
-      const workflow = buildWorkflowPayload()
       const payload = { workflow, inputs: {}, user_id: 'web-user', signal: abortController.signal }
 
-      let result: any
-      if (process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'ghpages') {
-        console.log('Running workflow client-side:', workflow)
-        result = await executeWorkflowClientSide(payload, undefined, undefined)
-      } else {
-        console.log('Running workflow via API:', workflow)
-        const response = await fetch('/api/workflow/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`)
-        }
-        result = await response.json()
-      }
+      // Always run client-side — enables live streaming, HITL, and uses the
+      // user's localStorage API keys (server route can't access those)
+      const result = await executeWorkflowClientSide(
+        payload,
+        handleProgress,
+        handleStream,
+        humanInTheLoop ? handleCheckpoint : undefined,
+      )
+
       if (result.status === 'completed' && result.outputs) {
         setExecutionOutputs(result.outputs)
         setShowOutputPanel(true)
 
-        // Persist builder run to localStorage
+        // Persist builder run
         saveRunToStorage(
           template ? template.id : 'custom',
           template ? template.name : 'Custom Workflow',
@@ -585,15 +620,20 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
           nodes,
         )
       }
+
+      const statusLabel = result.status === 'completed' ? 'success'
+        : result.status === 'cancelled' ? 'warning' : 'error'
       setRunResult({
-        status: result.status === 'completed' ? 'success' : 'error',
+        status: statusLabel,
         message: result.status === 'completed'
           ? `✅ Workflow completed! ${result.steps_completed}/${result.total_steps} steps in ${(result.execution_time || 0).toFixed(1)}s`
-          : `❌ Workflow failed: ${result.error || 'Unknown error'}`
+          : result.status === 'cancelled'
+          ? '⚠️ Workflow cancelled'
+          : `❌ Workflow failed: ${(result as any).error || 'Unknown error'}`
       })
     } catch (error: any) {
       if (error?.name === 'AbortError') {
-        setRunResult({ status: 'warning', message: 'Workflow cancelled by user' })
+        setRunResult({ status: 'warning', message: '⚠️ Workflow cancelled by user' })
       } else {
         console.error('Workflow execution error:', error)
         setRunResult({ status: 'error', message: `Failed to run workflow: ${error.message}` })

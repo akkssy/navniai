@@ -272,6 +272,19 @@ export interface LLMCallOptions {
   maxRetries?: number
 }
 
+/** Check if an env-var API key exists for a provider (server-side only) */
+function getEnvApiKey(provider: LLMProviderKey): string | undefined {
+  const envMap: Record<LLMProviderKey, string | undefined> = {
+    ollama:      undefined, // no key needed
+    openai:      process.env.OPENAI_API_KEY,
+    gemini:      process.env.GEMINI_API_KEY,
+    anthropic:   process.env.ANTHROPIC_API_KEY,
+    groq:        process.env.GROQ_API_KEY,
+    openrouter:  process.env.OPENROUTER_API_KEY,
+  }
+  return envMap[provider] || undefined
+}
+
 export async function callLLMWithFallback(
   systemPrompt: string, userMessage: string,
   settingsOrOptions?: LLMSettings | LLMCallOptions, timeoutMs = 30000,
@@ -300,13 +313,21 @@ export async function callLLMWithFallback(
     maxRetries = 1
   }
 
-  const chain = s.fallbackChain.length > 0 ? s.fallbackChain : [s.activeProvider]
+  // Always try activeProvider first, then the rest of the fallback chain (deduped)
+  const baseChain = s.fallbackChain.length > 0 ? s.fallbackChain : [s.activeProvider]
+  const chain = [s.activeProvider, ...baseChain.filter(p => p !== s.activeProvider)]
+
   const errors: string[] = []
   for (const key of chain) {
     // Check abort before trying each provider
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    const cfg = s.providers[key] || { provider: key }
+    // Skip providers that require an API key but don't have one configured
+    if (PROVIDER_REGISTRY[key]?.requiresApiKey && !cfg.apiKey && !getEnvApiKey(key)) {
+      errors.push(`${key}: no API key configured`)
+      continue
+    }
     try {
-      const cfg = s.providers[key] || { provider: key }
       const text = await withRetry(
         () => callProvider(key, systemPrompt, userMessage, cfg, timeout, signal),
         maxRetries, 1000, signal,
@@ -520,12 +541,20 @@ export async function callLLMWithFallbackStreaming(
     maxRetries = 1
   }
 
-  const chain = s.fallbackChain.length > 0 ? s.fallbackChain : [s.activeProvider]
+  // Always try activeProvider first, then the rest of the fallback chain (deduped)
+  const baseChain = s.fallbackChain.length > 0 ? s.fallbackChain : [s.activeProvider]
+  const chain = [s.activeProvider, ...baseChain.filter(p => p !== s.activeProvider)]
+
   const errors: string[] = []
   for (const key of chain) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    const cfg = s.providers[key] || { provider: key }
+    // Skip providers that require an API key but don't have one configured
+    if (PROVIDER_REGISTRY[key]?.requiresApiKey && !cfg.apiKey && !getEnvApiKey(key)) {
+      errors.push(`${key}: no API key configured`)
+      continue
+    }
     try {
-      const cfg = s.providers[key] || { provider: key }
       const text = await withRetry(
         () => streamProviderCall(key, systemPrompt, userMessage, cfg, timeout, onChunk, signal),
         maxRetries, 1000, signal,
