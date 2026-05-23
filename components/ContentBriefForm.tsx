@@ -183,10 +183,11 @@ export function ContentBriefForm({ onSubmit, isRunning }: ContentBriefFormProps)
 
       {/* Submit */}
       <div className="px-5 py-4 border-t border-surface-300">
+
         <button
           onClick={() => canSubmit && onSubmit(brief)}
-          disabled={!canSubmit}
-          className="w-full btn-primary disabled:bg-surface-300 disabled:text-ink-300 text-sm flex items-center justify-center gap-2"
+          disabled={!canSubmit && !isRunning}
+          className={`w-full btn-primary text-sm flex items-center justify-center gap-2 ${!canSubmit && !isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {isRunning ? (
             <><span className="animate-spin">⏳</span> Generating Content...</>
