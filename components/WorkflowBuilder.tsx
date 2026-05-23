@@ -858,23 +858,22 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
                       </>
                     ) : (
                       <>
-                        <span className="animate-spin">⏳</span>
-                        <span>Agent {pipelineProgress.filter(s => s.status === 'completed').length + 1}/{pipelineProgress.length}:</span>
-                        <span className="font-semibold">{pipelineProgress.find(s => s.status === 'running')?.agentName || 'Initializing...'}</span>
-                        <span className="ml-auto text-[10px] opacity-70">🔗 Research → Write → Edit → SEO → Social</span>
+                        <span className="animate-spin shrink-0">⏳</span>
+                        <span className="shrink-0">Agent {pipelineProgress.filter(s => s.status === 'completed').length + 1}/{pipelineProgress.length}:</span>
+                        <span className="font-semibold truncate">{pipelineProgress.find(s => s.status === 'running')?.agentName || 'Initializing...'}</span>
+                        <span className="hidden sm:inline text-[10px] opacity-70 truncate">🔗 Research → Write → Edit → SEO → Social</span>
                       </>
                     )}
-                    {/* Cancel Button */}
+                    {/* Cancel Button — ml-auto keeps it pinned to the right */}
                     <button
                       onClick={() => {
                         abortControllerRef.current?.abort()
-                        // Also resolve any pending checkpoint so the executor can exit
                         if (checkpointResolverRef.current) {
                           checkpointResolverRef.current({ action: 'approve' })
                           setCheckpointRequest(null)
                         }
                       }}
-                      className="ml-2 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] font-semibold transition border border-red-300/30"
+                      className="ml-auto shrink-0 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] font-semibold transition border border-red-300/30"
                       title="Cancel pipeline execution"
                     >
                       ✕ Cancel
