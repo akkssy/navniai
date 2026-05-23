@@ -118,7 +118,7 @@ function useElapsedTime(isRunning: boolean) {
   return elapsed
 }
 
-export function WorkflowBuilder({ templateId, runId }: { templateId?: string; runId?: string } = {}) {
+export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?: string; runId?: string; workflowId?: string } = {}) {
   const { data: session } = useSession()
   const template = templateId ? getTemplateById(templateId) : null
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -160,12 +160,15 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
     return []
   })
 
-  // Persist custom agents to localStorage
+  // On mount: hydrate custom agents from DB (source of truth), fallback to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem('navniai_custom_agents', JSON.stringify(customAgents))
-    } catch { /* quota exceeded or SSR */ }
-  }, [customAgents])
+    fetch('/api/agents').then(r => r.json()).then(data => {
+      if (data.ok && Array.isArray(data.agents)) {
+        setCustomAgents(data.agents)
+        try { localStorage.setItem('navniai_custom_agents', JSON.stringify(data.agents)) } catch { /* quota */ }
+      }
+    }).catch(() => { /* not authenticated or offline — localStorage is fine */ })
+  }, [])
 
   // ─── Run Persistence Helper (dual-write: localStorage + API) ───
   const saveRunToStorage = (
@@ -254,6 +257,21 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
     setEdges(templateEdges)
   }, [templateId, setNodes, setEdges])
 
+  // ─── Auto-load workflow from URL param (?workflowId=<id>) ───
+  const workflowLoaded = useRef(false)
+  useEffect(() => {
+    if (!workflowId || workflowLoaded.current) return
+    workflowLoaded.current = true
+    fetch(`/api/workflows/${workflowId}`).then(r => r.json()).then(data => {
+      if (!data.ok) return
+      const { nodes: loadedNodes, edges: loadedEdges } = JSON.parse(data.workflow.config || '{}')
+      if (loadedNodes) setNodes(loadedNodes)
+      if (loadedEdges) setEdges(loadedEdges)
+      setSavedWorkflowId(workflowId)
+      setSavedWorkflowName(data.workflow.name || '')
+    }).catch(() => {})
+  }, [workflowId, setNodes, setEdges])
+
   // ─── Load past run from localStorage (when ?run=<id> is in URL) ───
   const runLoaded = useRef(false)
   useEffect(() => {
@@ -279,11 +297,27 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
   const allAgents = [...MARKETING_AGENTS, ...SYSTEM_AGENTS, ...customAgents]
 
   const addCustomAgent = useCallback((agent: Agent) => {
-    setCustomAgents(prev => [...prev, agent])
+    setCustomAgents(prev => {
+      const next = [...prev, agent]
+      try { localStorage.setItem('navniai_custom_agents', JSON.stringify(next)) } catch { /* quota */ }
+      return next
+    })
+    // Sync to DB
+    fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(agent),
+    }).catch(() => { /* offline — localStorage still has it */ })
   }, [])
 
   const deleteCustomAgent = useCallback((agentId: string) => {
-    setCustomAgents(prev => prev.filter(a => a.id !== agentId))
+    setCustomAgents(prev => {
+      const next = prev.filter(a => a.id !== agentId)
+      try { localStorage.setItem('navniai_custom_agents', JSON.stringify(next)) } catch { /* quota */ }
+      return next
+    })
+    // Sync to DB
+    fetch(`/api/agents?id=${agentId}`, { method: 'DELETE' }).catch(() => { /* offline */ })
   }, [])
 
   const selectedNode = selectedNodeId ? nodes.find(n => n.id === selectedNodeId) || null : null

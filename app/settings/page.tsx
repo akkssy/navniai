@@ -12,8 +12,24 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<LLMSettings | null>(null)
   const [testResults, setTestResults] = useState<Record<string, string>>({})
   const [testing, setTesting] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
 
-  useEffect(() => { setSettings(loadSettings()) }, [])
+  useEffect(() => {
+    // Load from localStorage first for instant render
+    setSettings(loadSettings())
+    // Then try to hydrate from DB (overwrites localStorage if DB has data)
+    fetch('/api/settings').then(r => r.json()).then(data => {
+      if (data.ok && data.settings) {
+        const merged = { ...loadSettings(), ...data.settings }
+        for (const k of ALL_PROVIDER_KEYS) {
+          merged.providers[k] = { ...loadSettings().providers[k], ...data.settings.providers?.[k] }
+        }
+        saveSettings(merged)
+        setSettings(merged)
+      }
+    }).catch(() => { /* not authenticated or offline — localStorage is fine */ })
+  }, [])
 
   if (!settings) return <div className="min-h-screen flex items-center justify-center text-ink-400">Analyzing patterns...</div>
 
@@ -21,6 +37,18 @@ export default function SettingsPage() {
     const next = fn({ ...settings })
     setSettings(next)
     saveSettings(next)
+    // Sync to DB in background
+    setSyncing(true)
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(next),
+    }).then(r => r.json()).then(d => {
+      setSyncMsg(d.ok ? '✓ Synced' : '⚠ Sync failed')
+    }).catch(() => setSyncMsg('⚠ Offline — saved locally')).finally(() => {
+      setSyncing(false)
+      setTimeout(() => setSyncMsg(''), 2500)
+    })
   }
 
   const testProvider = async (key: LLMProviderKey) => {
@@ -44,7 +72,11 @@ export default function SettingsPage() {
     <div className="min-h-screen">
       <header className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-lg font-semibold tracking-tight text-ink-700">LLM Settings</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold tracking-tight text-ink-700">LLM Settings</h1>
+            {syncing && <span className="text-[11px] text-ink-300 animate-pulse">syncing…</span>}
+            {syncMsg && !syncing && <span className={`text-[11px] ${syncMsg.startsWith('✓') ? 'text-green-500' : 'text-amber-500'}`}>{syncMsg}</span>}
+          </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link href="/dashboard" className="text-ink-400 hover:text-ink-700 text-sm transition">← Dashboard</Link>

@@ -8,7 +8,8 @@ function BuilderWithTemplate() {
   const searchParams = useSearchParams()
   const templateId = searchParams.get('template') || undefined
   const runId = searchParams.get('run') || undefined
-  return <WorkflowBuilder templateId={templateId} runId={runId} />
+  const workflowId = searchParams.get('workflowId') || undefined
+  return <WorkflowBuilder templateId={templateId} runId={runId} workflowId={workflowId} />
 }
 
 export default function WorkflowBuilderPage() {

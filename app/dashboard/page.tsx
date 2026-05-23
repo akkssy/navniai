@@ -43,6 +43,14 @@ export default function Dashboard() {
   const [stats, setStats] = useState<RunStats>({ totalRuns: 0, completedRuns: 0, failedRuns: 0, avgExecutionTime: 0 })
   const [loadingRuns, setLoadingRuns] = useState(true)
   const [usingApi, setUsingApi] = useState(false)
+  const [savedWorkflows, setSavedWorkflows] = useState<{ id: string; name: string; updatedAt: string }[]>([])
+  const [loadingWorkflows, setLoadingWorkflows] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/workflows').then(r => r.json()).then(data => {
+      if (data.ok && Array.isArray(data.workflows)) setSavedWorkflows(data.workflows)
+    }).catch(() => {}).finally(() => setLoadingWorkflows(false))
+  }, [])
 
   const refreshRuns = useCallback(async () => {
     // Try API first (PostgreSQL = source of truth)
@@ -166,6 +174,43 @@ export default function Dashboard() {
           <div className="glass-card p-8 text-center mb-8">
             <p className="text-3xl mb-2 opacity-30">🚀</p>
             <p className="text-sm text-ink-400">No runs yet. Create a content pipeline or workflow to get started.</p>
+          </div>
+        )}
+
+        {/* Saved Workflows */}
+        {(loadingWorkflows || savedWorkflows.length > 0) && (
+          <div className="glass-card overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-surface-300 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-700">My Workflows</h2>
+              <Link href="/workflow/builder" className="text-[11px] text-accent-500 hover:text-accent-600 transition flex items-center gap-1">
+                <PlusIcon className="h-3.5 w-3.5" /> New
+              </Link>
+            </div>
+            {loadingWorkflows ? (
+              <div className="px-6 py-4 text-xs text-ink-400 animate-pulse">Loading…</div>
+            ) : (
+              <div className="divide-y divide-surface-300">
+                {savedWorkflows.map(wf => (
+                  <div key={wf.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50 transition group">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base">💾</span>
+                      <div>
+                        <p className="text-sm font-medium text-ink-700">{wf.name}</p>
+                        <p className="text-[11px] text-ink-300">
+                          Updated {new Date(wf.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/workflow/builder?workflowId=${wf.id}`}
+                      className="text-[11px] btn-secondary px-3 py-1.5 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      Open →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
