@@ -140,6 +140,16 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
   const checkpointResolverRef = useRef<((decision: CheckpointDecision) => void) | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const templateLoaded = useRef(false)
+
+  // ─── Saved Workflow State ───
+  const [savedWorkflowId, setSavedWorkflowId] = useState<string | null>(null)
+  const [savedWorkflowName, setSavedWorkflowName] = useState<string>('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [saveModalName, setSaveModalName] = useState('')
+  const [showWorkflowsDrawer, setShowWorkflowsDrawer] = useState(false)
+  const [savedWorkflows, setSavedWorkflows] = useState<{ id: string; name: string; updatedAt: string }[]>([])
+  const [loadingWorkflows, setLoadingWorkflows] = useState(false)
   const [customAgents, setCustomAgents] = useState<Agent[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -339,6 +349,96 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
         inputs: node.data.inputs,
         condition: node.data.condition || null,
       })),
+    }
+  }
+
+  // ─── Save Workflow to DB ───
+  const saveWorkflow = async (name: string) => {
+    setIsSaving(true)
+    const config = JSON.stringify({ nodes, edges })
+    try {
+      if (savedWorkflowId) {
+        // Update existing
+        const res = await fetch(`/api/workflows/${savedWorkflowId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, config }),
+        })
+        const data = await res.json()
+        if (data.ok) {
+          setSavedWorkflowName(name)
+          setRunResult({ status: 'success', message: `✅ Workflow "${name}" saved!` })
+          setTimeout(() => setRunResult(null), 3000)
+        }
+      } else {
+        // Create new
+        const res = await fetch('/api/workflows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, config }),
+        })
+        const data = await res.json()
+        if (data.ok) {
+          setSavedWorkflowId(data.workflow.id)
+          setSavedWorkflowName(name)
+          setRunResult({ status: 'success', message: `✅ Workflow "${name}" saved!` })
+          setTimeout(() => setRunResult(null), 3000)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to save workflow:', err)
+      setRunResult({ status: 'error', message: '❌ Failed to save workflow' })
+      setTimeout(() => setRunResult(null), 4000)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // ─── Load list of saved workflows ───
+  const fetchSavedWorkflows = async () => {
+    setLoadingWorkflows(true)
+    try {
+      const res = await fetch('/api/workflows')
+      const data = await res.json()
+      if (data.ok) setSavedWorkflows(data.workflows)
+    } catch (err) {
+      console.error('Failed to fetch workflows:', err)
+    } finally {
+      setLoadingWorkflows(false)
+    }
+  }
+
+  // ─── Load a specific workflow onto the canvas ───
+  const loadWorkflow = async (id: string, name: string) => {
+    try {
+      const res = await fetch(`/api/workflows/${id}`)
+      const data = await res.json()
+      if (!data.ok) return
+      const { nodes: loadedNodes, edges: loadedEdges } = JSON.parse(data.workflow.config || '{}')
+      if (loadedNodes) setNodes(loadedNodes)
+      if (loadedEdges) setEdges(loadedEdges)
+      setSavedWorkflowId(id)
+      setSavedWorkflowName(name)
+      setSelectedNodeId(null)
+      setShowWorkflowsDrawer(false)
+      setRunResult({ status: 'success', message: `📂 Loaded "${name}"` })
+      setTimeout(() => setRunResult(null), 3000)
+    } catch (err) {
+      console.error('Failed to load workflow:', err)
+    }
+  }
+
+  // ─── Delete a saved workflow ───
+  const deleteWorkflow = async (id: string) => {
+    try {
+      await fetch(`/api/workflows/${id}`, { method: 'DELETE' })
+      setSavedWorkflows(prev => prev.filter(w => w.id !== id))
+      if (savedWorkflowId === id) {
+        setSavedWorkflowId(null)
+        setSavedWorkflowName('')
+      }
+    } catch (err) {
+      console.error('Failed to delete workflow:', err)
     }
   }
 
@@ -676,12 +776,15 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
               🔧 Builder
             </button>
           </div>
-          {template && (
+          {(template || savedWorkflowName) && (
             <>
               <div className="h-4 w-px bg-surface-300" />
               <span className="text-xs text-ink-500 flex items-center gap-1.5">
-                <span>{template.icon}</span>
-                {template.name}
+                {template ? (
+                  <><span>{template.icon}</span>{template.name}</>
+                ) : (
+                  <><span>💾</span>{savedWorkflowName}</>
+                )}
               </span>
             </>
           )}
@@ -1067,9 +1170,28 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
                     {configuredCount}/{nodes.length} configured
                   </span>
                 )}
-                <button onClick={exportWorkflow} disabled={nodes.length === 0}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium">
-                  💾 Save
+                {/* My Workflows button */}
+                <button
+                  onClick={() => { setShowWorkflowsDrawer(true); fetchSavedWorkflows() }}
+                  className="px-3.5 py-2 glass-card hover:bg-surface-100 text-ink-600 dark:text-ink-300 rounded-md flex items-center gap-1.5 transition text-xs font-medium"
+                >
+                  📂 My Workflows
+                </button>
+                {/* Save button */}
+                <button
+                  onClick={() => {
+                    if (savedWorkflowId) {
+                      saveWorkflow(savedWorkflowName)
+                    } else {
+                      setSaveModalName('')
+                      setShowSaveModal(true)
+                    }
+                  }}
+                  disabled={nodes.length === 0 || isSaving || !session?.user}
+                  title={!session?.user ? 'Sign in to save workflows' : savedWorkflowId ? `Save "${savedWorkflowName}"` : 'Save workflow'}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium"
+                >
+                  {isSaving ? <><span className="animate-spin">⏳</span> Saving...</> : savedWorkflowId ? '💾 Update' : '💾 Save'}
                 </button>
                 <button onClick={runWorkflow} disabled={isRunning || nodes.length === 0}
                   className="px-3.5 py-2 bg-accent-600 hover:bg-accent-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium">
@@ -1159,6 +1281,108 @@ export function WorkflowBuilder({ templateId, runId }: { templateId?: string; ru
       )}
 
       </div>{/* end flex-1 flex overflow-hidden */}
+
+      {/* ─── Save Name Modal ─── */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-card border border-surface-300 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <h3 className="text-sm font-semibold text-ink-700 mb-1">Save Workflow</h3>
+            <p className="text-[11px] text-ink-400 mb-4">Give your workflow a name so you can load it later.</p>
+            <input
+              type="text"
+              value={saveModalName}
+              onChange={e => setSaveModalName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && saveModalName.trim()) {
+                  setShowSaveModal(false)
+                  saveWorkflow(saveModalName.trim())
+                }
+                if (e.key === 'Escape') setShowSaveModal(false)
+              }}
+              placeholder="e.g. Code Review Pipeline"
+              autoFocus
+              className="w-full px-3 py-2 text-sm border border-surface-300 rounded-md bg-surface-50 focus:outline-none focus:ring-2 focus:ring-accent-500 text-ink-700 placeholder-ink-300 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowSaveModal(false)}
+                className="px-4 py-2 text-xs rounded-md border border-surface-300 text-ink-500 hover:bg-surface-100 transition">
+                Cancel
+              </button>
+              <button
+                onClick={() => { if (saveModalName.trim()) { setShowSaveModal(false); saveWorkflow(saveModalName.trim()) } }}
+                disabled={!saveModalName.trim()}
+                className="px-4 py-2 text-xs rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-300 disabled:text-ink-300 text-white font-medium transition">
+                💾 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── My Workflows Drawer ─── */}
+      {showWorkflowsDrawer && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/30 backdrop-blur-sm" onClick={() => setShowWorkflowsDrawer(false)} />
+          {/* Panel */}
+          <div className="w-80 bg-card border-l border-surface-300 flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-surface-300">
+              <h3 className="text-sm font-semibold text-ink-700">📂 My Workflows</h3>
+              <button onClick={() => setShowWorkflowsDrawer(false)}
+                className="text-ink-400 hover:text-ink-700 text-xs px-2 py-1 rounded hover:bg-surface-100 transition">
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {loadingWorkflows ? (
+                <div className="flex items-center justify-center py-12 text-ink-400 text-xs gap-2">
+                  <span className="animate-spin">⏳</span> Loading...
+                </div>
+              ) : savedWorkflows.length === 0 ? (
+                <div className="text-center py-12 text-ink-300">
+                  <p className="text-3xl mb-3 opacity-40">📭</p>
+                  <p className="text-xs">No saved workflows yet.</p>
+                  <p className="text-[11px] mt-1">Build something and hit Save!</p>
+                </div>
+              ) : savedWorkflows.map(wf => (
+                <div key={wf.id}
+                  className={`group flex items-start justify-between p-3 rounded-lg border cursor-pointer transition ${
+                    wf.id === savedWorkflowId
+                      ? 'border-accent-300 bg-accent-50 dark:bg-accent-950/30'
+                      : 'border-surface-300 hover:border-surface-400 hover:bg-surface-50'
+                  }`}
+                  onClick={() => loadWorkflow(wf.id, wf.name)}
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-ink-700 truncate">{wf.name}</p>
+                    <p className="text-[10px] text-ink-400 mt-0.5">
+                      {new Date(wf.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                    {wf.id === savedWorkflowId && (
+                      <span className="text-[10px] text-accent-600 font-medium">● Active</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteWorkflow(wf.id) }}
+                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-[10px] px-1.5 py-0.5 rounded hover:bg-red-50 transition ml-2 shrink-0"
+                    title="Delete workflow"
+                  >
+                    🗑
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-3 border-t border-surface-300">
+              <button
+                onClick={() => { setNodes([]); setEdges([]); setSavedWorkflowId(null); setSavedWorkflowName(''); setShowWorkflowsDrawer(false) }}
+                className="w-full text-xs text-ink-400 hover:text-ink-700 py-2 rounded-md hover:bg-surface-100 transition"
+              >
+                + New blank workflow
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
