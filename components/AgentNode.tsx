@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
-import { Agent } from './WorkflowBuilder'
+import type { Agent } from '../lib/agents'
 
 interface AgentNodeData {
   agent: Agent

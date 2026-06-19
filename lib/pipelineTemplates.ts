@@ -1,4 +1,4 @@
-import { SYSTEM_AGENTS, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from '@/components/WorkflowBuilder'
+import { SYSTEM_AGENTS, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from './agents'
 
 export interface PipelineStep {
   agentId: string       // references SYSTEM_AGENTS id

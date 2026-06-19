@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Agent, AgentAction, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from './WorkflowBuilder'
+import { MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from '../lib/agents'
+import type { Agent, AgentAction } from '../lib/agents'
 
 const ICON_OPTIONS = ['🤖', '📄', '💬', '📊', '⚖️', '📧', '💡', '✍️', '📱', '🎯', '🏥', '🏦', '🎓', '🛒', '📑', '🚩', '👥', '📋', '🔧', '🎨']
 const COLOR_OPTIONS = ['#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#a855f7']

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
-import { Agent, AgentAction } from './WorkflowBuilder'
+import type { Agent, AgentAction } from '../lib/agents'
 
 // Actions available per system agent type
 const SYSTEM_AGENT_ACTIONS: Record<string, AgentAction[]> = {
