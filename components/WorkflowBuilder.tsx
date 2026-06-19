@@ -23,9 +23,8 @@ import { getTemplateById } from '../lib/pipelineTemplates'
 import { AgentNode } from './AgentNode'
 import { AgentPalette } from './AgentPalette'
 import { NodeConfigPanel } from './NodeConfigPanel'
-import { ContentBriefForm, type ContentBrief } from './ContentBriefForm'
-import { ContentPackageView } from './ContentPackageView'
-import { saveRun, getRun, rebuildOutputs, rebuildNodeAgentMap } from '../lib/runStorage'
+
+import { saveRun, getRun, rebuildOutputs } from '../lib/runStorage'
 
 const nodeTypes = {
   agentNode: AgentNode,
@@ -90,8 +89,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
   const [runResult, setRunResult] = useState<{ status: string; message: string } | null>(null)
   const [executionOutputs, setExecutionOutputs] = useState<Record<string, { output: string; status: string; provider?: string }> | null>(null)
   const [showOutputPanel, setShowOutputPanel] = useState(false)
-  const [mode, setMode] = useState<'builder' | 'content'>('content') // Default to content marketing mode
-  const [nodeAgentMap, setNodeAgentMap] = useState<Record<string, string>>({}) // nodeId → agentId for ContentPackageView
+
   const [pipelineProgress, setPipelineProgress] = useState<StepProgress[]>([])
   const [streamingText, setStreamingText] = useState<Record<string, string>>({}) // agentId → live text
   const streamingTextRef = useRef<Record<string, string>>({})
@@ -218,7 +216,6 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
 
     setNodes(templateNodes)
     setEdges(templateEdges)
-    setMode('builder') // Templates load into builder mode
   }, [templateId, setNodes, setEdges])
 
   // ─── Auto-load workflow from URL param (?workflowId=<id>) ───
@@ -244,14 +241,11 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     if (!run) return
     runLoaded.current = true
 
-    // Rebuild outputs and nodeAgentMap from stored run
+    // Rebuild outputs from stored run
     const outputs = rebuildOutputs(run)
-    const agentMap = rebuildNodeAgentMap(run)
 
     setExecutionOutputs(outputs)
-    setNodeAgentMap(agentMap)
     setShowOutputPanel(true)
-    setMode(run.pipelineType === 'content' ? 'content' : 'builder')
     setRunResult({
       status: 'success',
       message: `📂 Loaded run: ${run.name} — ${run.stepsCompleted}/${run.stepsTotal} steps in ${(run.executionTime || 0).toFixed(1)}s`,
@@ -440,175 +434,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     }
   }
 
-  // Generate a full 5-step marketing pipeline from a content brief
-  const generateMarketingPipeline = async (brief: ContentBrief) => {
-    // ── RAG Context Retrieval ──
-    let ragContext = ''
-    if (brief.useRAG) {
-      try {
-        const ragQuery = [brief.topic, brief.primaryKeyword, brief.audience].filter(Boolean).join(' ')
-        const ragRes = await fetch('/api/rag/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: ragQuery, topK: 5 }),
-        })
-        const ragData = await ragRes.json()
-        if (ragData.ok && ragData.results?.length > 0) {
-          ragContext = '\n\n--- KNOWLEDGE BASE CONTEXT (use this for brand voice, facts & style) ---\n' +
-            ragData.results.map((r: any) => `[${r.documentName}]: ${r.content}`).join('\n\n') +
-            '\n--- END KNOWLEDGE BASE CONTEXT ---\n'
-        }
-      } catch (err) {
-        console.warn('RAG retrieval failed, continuing without context:', err)
-      }
-    }
 
-    const pipelineSteps = [
-      { agent: 'researcher', action: 'research_topic', inputs: { topic: brief.topic, audience: brief.audience, competitors: brief.notes + ragContext } },
-      { agent: 'writer', action: 'write_article', inputs: { brief: `{{researcher.output}}\n\nTopic: ${brief.topic}\nAudience: ${brief.audience}\nKeywords: ${brief.primaryKeyword}, ${brief.secondaryKeywords}${ragContext ? '\n\nBrand Context:' + ragContext : ''}`, tone: brief.tone, word_count: String(brief.wordCount) } },
-      { agent: 'editor', action: 'edit_article', inputs: { content: '{{writer.output}}', brand_voice: (brief.notes || '') + (ragContext ? '\n\nReference material from knowledge base:' + ragContext : '') } },
-      { agent: 'seo_optimizer', action: 'optimize_seo', inputs: { content: '{{editor.output}}', primary_keyword: brief.primaryKeyword, secondary_keywords: brief.secondaryKeywords } },
-      { agent: 'social_writer', action: 'create_social_posts', inputs: { content: '{{editor.output}}', platforms: 'LinkedIn, X/Twitter, Instagram, Newsletter' } },
-    ]
-
-    const pipelineNodes: Node[] = pipelineSteps.map((step, i) => {
-      const agent = MARKETING_AGENTS.find(a => a.id === step.agent) || MARKETING_AGENTS[0]
-      return {
-        id: `${step.agent}-pipeline-${Date.now()}-${i}`,
-        type: 'agentNode',
-        position: { x: 300, y: 80 + i * 160 },
-        data: { agent, action: step.action, actionLabel: step.action, inputs: step.inputs, condition: '' },
-      }
-    })
-
-    const pipelineEdges: Edge[] = pipelineNodes.slice(0, -1).map((node, i) => ({
-      id: `edge-pipeline-${i}`,
-      source: node.id,
-      target: pipelineNodes[i + 1].id,
-      animated: true,
-      style: { stroke: '#6366f1', strokeWidth: 2 },
-    }))
-
-    // Build node→agent map for ContentPackageView
-    const agentMap: Record<string, string> = {}
-    pipelineNodes.forEach((n, i) => { agentMap[n.id] = pipelineSteps[i].agent })
-    setNodeAgentMap(agentMap)
-
-    setNodes(pipelineNodes)
-    setEdges(pipelineEdges)
-
-    // Now run the pipeline
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-    setIsRunning(true)
-    setRunResult(null)
-    setExecutionOutputs(null)
-    setShowOutputPanel(false)
-    setStreamingText({})
-    streamingTextRef.current = {}
-    setCheckpointRequest(null)
-    setCheckpointEditing(false)
-    checkpointResolverRef.current = null
-
-    // Initialize progress for all steps
-    setPipelineProgress(pipelineSteps.map((step, i) => ({
-      stepId: '',
-      agentId: step.agent,
-      agentName: MARKETING_AGENTS.find(a => a.id === step.agent)?.name || step.agent,
-      status: 'pending' as const,
-      stepIndex: i,
-      totalSteps: pipelineSteps.length,
-    })))
-
-    const handleProgress = (progress: StepProgress) => {
-      setPipelineProgress(prev => prev.map(p =>
-        p.agentId === progress.agentId
-          ? { ...p, status: progress.status, thinkingMessage: progress.thinkingMessage, startedAt: progress.startedAt || p.startedAt, completedAt: progress.completedAt }
-          : p
-      ))
-    }
-
-    // SSE streaming: throttle UI updates to ~15fps to avoid React render thrashing
-    let streamRAF: number | null = null
-    const handleStream: OnStreamCallback = (_stepId, agentId, _chunk, fullText) => {
-      streamingTextRef.current = { ...streamingTextRef.current, [agentId]: fullText }
-      if (!streamRAF) {
-        streamRAF = requestAnimationFrame(() => {
-          setStreamingText({ ...streamingTextRef.current })
-          streamRAF = null
-        })
-      }
-    }
-
-    // Human-in-the-Loop checkpoint handler — pauses pipeline for user review
-    const handleCheckpoint: OnCheckpointCallback = (request) => {
-      return new Promise<CheckpointDecision>((resolve) => {
-        setCheckpointRequest(request)
-        setCheckpointEditText(request.output)
-        setCheckpointEditing(false)
-        checkpointResolverRef.current = resolve
-      })
-    }
-
-    try {
-      const workflow = {
-        name: 'Content Marketing Pipeline',
-        version: '1.0',
-        steps: pipelineNodes.map((node, i) => ({
-          id: node.id,
-          agent: pipelineSteps[i].agent,
-          agent_name: node.data.agent.name,
-          agent_category: 'system' as const,
-          system_prompt: node.data.agent.systemPrompt || null,
-          action: pipelineSteps[i].action,
-          action_label: pipelineSteps[i].action,
-          depends_on: i > 0 ? [pipelineNodes[i - 1].id] : [],
-          inputs: pipelineSteps[i].inputs,
-          condition: null,
-        })),
-      }
-
-      const payload = { workflow, inputs: {}, user_id: 'web-user', signal: abortController.signal }
-      let result: any
-
-      // Always use client-side execution for content pipeline (enables live progress + streaming + checkpoints)
-      result = await executeWorkflowClientSide(payload, handleProgress, handleStream, humanInTheLoop ? handleCheckpoint : undefined)
-
-      if (result.status === 'cancelled') {
-        setRunResult({ status: 'warning', message: 'Pipeline cancelled by user' })
-      } else if (result.status === 'completed' && result.outputs) {
-        setExecutionOutputs(result.outputs)
-        setShowOutputPanel(true)
-
-        // Persist run to localStorage
-        saveRunToStorage(
-          'content',
-          `Content: ${brief.topic.substring(0, 60)}`,
-          'completed',
-          result.execution_time || 0,
-          result.outputs,
-          brief,
-          pipelineNodes,
-        )
-      }
-      setRunResult({
-        status: result.status === 'completed' ? 'success' : 'error',
-        message: result.status === 'completed'
-          ? `✅ Content package ready! ${result.steps_completed}/${result.total_steps} agents in ${(result.execution_time || 0).toFixed(1)}s`
-          : `❌ Pipeline failed: ${result.error || 'Unknown error'}`
-      })
-    } catch (error: any) {
-      if (error?.name === 'AbortError') {
-        setRunResult({ status: 'warning', message: 'Pipeline cancelled by user' })
-      } else {
-        console.error('Pipeline execution error:', error)
-        setRunResult({ status: 'error', message: `Failed to run pipeline: ${error.message}` })
-      }
-    } finally {
-      setIsRunning(false)
-      abortControllerRef.current = null
-    }
-  }
 
   const exportWorkflow = () => {
     const workflow = buildWorkflowPayload()
@@ -758,22 +584,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
             <SparklesIcon className="h-4.5 w-4.5 text-accent-500" />
             <span className="text-sm font-bold text-ink-700">NavniAI</span>
           </Link>
-          {/* Mode toggle */}
-          <div className="h-4 w-px bg-surface-300" />
-          <div className="flex gap-0.5 bg-surface-100 rounded-md p-0.5 border border-surface-300">
-            <button
-              onClick={() => setMode('content')}
-              className={`px-3 py-1 text-[11px] font-medium rounded-md transition ${mode === 'content' ? 'bg-accent-600 text-white shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
-            >
-              ✨ Content Pipeline
-            </button>
-            <button
-              onClick={() => setMode('builder')}
-              className={`px-3 py-1 text-[11px] font-medium rounded-md transition ${mode === 'builder' ? 'bg-card text-ink-700 shadow-sm' : 'text-ink-400 hover:text-ink-700'}`}
-            >
-              🔧 Builder
-            </button>
-          </div>
+
           {(template || savedWorkflowName) && (
             <>
               <div className="h-4 w-px bg-surface-300" />
@@ -811,325 +622,13 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
 
       <div className="flex-1 flex overflow-hidden">
 
-      {mode === 'content' ? (
+      {/* Unified Builder Mode */}
         <>
-          {/* Content Pipeline Mode */}
-          <div className="flex flex-col">
-            <ContentBriefForm onSubmit={generateMarketingPipeline} isRunning={isRunning} />
-            {/* HITL Toggle */}
-            <div className="px-4 py-2 border-t border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={humanInTheLoop}
-                    onChange={(e) => setHumanInTheLoop(e.target.checked)}
-                    disabled={isRunning}
-                    className="sr-only peer"
-                  />
-                  <div className="w-8 h-4 bg-surface-300 dark:bg-surface-600 rounded-full peer-checked:bg-amber-500 peer-disabled:opacity-50 transition-colors" />
-                  <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full peer-checked:translate-x-4 transition-transform shadow-sm" />
-                </div>
-                <span className="text-[11px] text-ink-500 dark:text-ink-400 group-hover:text-ink-700 dark:group-hover:text-ink-300 transition">
-                  👁️ Review between agents
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            {/* Running / Result status bar */}
-            {(isRunning || runResult) && (
-              <div className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b border-surface-300 ${
-                isRunning && checkpointRequest ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300' :
-                isRunning ? 'bg-accent-50 text-accent-700' :
-                runResult?.status === 'success' ? 'bg-emerald-50 text-emerald-700' :
-                'bg-red-50 text-red-700'
-              }`}>
-                {isRunning ? (
-                  <>
-                    {checkpointRequest ? (
-                      <>
-                        <span>👁️</span>
-                        <span className="font-semibold text-amber-700 dark:text-amber-300">Reviewing: {checkpointRequest.agentName}</span>
-                        <span className="text-[10px] opacity-70">— approve, edit, or regenerate below</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="animate-spin shrink-0">⏳</span>
-                        <span className="shrink-0">Agent {pipelineProgress.filter(s => s.status === 'completed').length + 1}/{pipelineProgress.length}:</span>
-                        <span className="font-semibold truncate">{pipelineProgress.find(s => s.status === 'running')?.agentName || 'Initializing...'}</span>
-                        <span className="hidden sm:inline text-[10px] opacity-70 truncate">🔗 Research → Write → Edit → SEO → Social</span>
-                      </>
-                    )}
-                    {/* Cancel Button — ml-auto keeps it pinned to the right */}
-                    <button
-                      onClick={() => {
-                        abortControllerRef.current?.abort()
-                        if (checkpointResolverRef.current) {
-                          checkpointResolverRef.current({ action: 'approve' })
-                          setCheckpointRequest(null)
-                        }
-                      }}
-                      className="ml-auto shrink-0 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] font-semibold transition border border-red-300/30"
-                      title="Cancel pipeline execution"
-                    >
-                      ✕ Cancel
-                    </button>
-                  </>
-                ) : runResult?.message}
-              </div>
-            )}
-
-            {/* Content Package View, Progress Tracker, or empty state */}
-            {showOutputPanel && executionOutputs ? (
-              <ContentPackageView
-                outputs={executionOutputs}
-                nodeAgentMap={nodeAgentMap}
-                onClose={() => setShowOutputPanel(false)}
-              />
-            ) : isRunning && pipelineProgress.length > 0 ? (
-              /* ── Enhanced Live Pipeline Progress Tracker ── */
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="w-full max-w-xl">
-                  {/* Header with live pulse */}
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-50 dark:bg-accent-950 border border-accent-200 dark:border-accent-800 mb-4">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-500" />
-                      </span>
-                      <span className="text-xs font-semibold text-accent-700 dark:text-accent-300">Multi-Agent Pipeline</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-ink-700">5 Agents Working</h3>
-                    <p className="text-xs text-ink-400 mt-1">Each agent receives the previous agent&apos;s output as context</p>
-                    {humanInTheLoop && (
-                      <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                        <span className="text-[10px]">👁️</span>
-                        <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">Review checkpoints enabled</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Agent Timeline */}
-                  <div className="space-y-1">
-                    {pipelineProgress.map((step, i) => {
-                      const agent = MARKETING_AGENTS.find(a => a.id === step.agentId)
-                      const isActive = step.status === 'running'
-                      const isDone = step.status === 'completed'
-                      const isPending = step.status === 'pending'
-                      const isReviewing = step.status === 'reviewing'
-                      const messages = AGENT_THINKING_MESSAGES[step.agentId] || ['Processing...']
-                      const elapsed = isActive && step.startedAt ? Math.floor((Date.now() - step.startedAt) / 1000) : null
-                      const duration = isDone && step.startedAt && step.completedAt ? ((step.completedAt - step.startedAt) / 1000).toFixed(1) : null
-
-                      return (
-                        <div key={step.agentId} className="flex items-stretch gap-3">
-                          {/* Timeline connector */}
-                          <div className="flex flex-col items-center w-8 shrink-0">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 border-2 transition-all duration-500 ${
-                              isDone ? 'bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-600' :
-                              isReviewing ? 'bg-amber-100 dark:bg-amber-900 border-amber-400 dark:border-amber-600 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/50 scale-110' :
-                              isActive ? 'bg-accent-100 dark:bg-accent-900 border-accent-400 dark:border-accent-500 shadow-lg shadow-accent-200/50 dark:shadow-accent-900/50 scale-110' :
-                              'bg-surface-100 dark:bg-surface-800 border-surface-300 dark:border-surface-600'
-                            }`}>
-                              {isDone ? '\u2705' : isReviewing ? (
-                                <span className="text-xs">👁️</span>
-                              ) : isActive ? (
-                                <span className="animate-spin text-xs">\u2699\ufe0f</span>
-                              ) : (
-                                <span className="text-ink-300 text-[10px] font-bold">{i + 1}</span>
-                              )}
-                            </div>
-                            {i < pipelineProgress.length - 1 && (
-                              <div className={`w-0.5 flex-1 min-h-[20px] transition-all duration-700 ${
-                                isDone ? 'bg-emerald-300 dark:bg-emerald-700' :
-                                isReviewing ? 'bg-amber-300 dark:bg-amber-700' :
-                                isActive ? 'bg-gradient-to-b from-accent-400 to-surface-200 dark:from-accent-600 dark:to-surface-700' :
-                                'bg-surface-200 dark:bg-surface-700'
-                              }`} />
-                            )}
-                          </div>
-
-                          {/* Agent Card */}
-                          <div className={`flex-1 rounded-lg px-4 py-3 mb-1 transition-all duration-500 border ${
-                            isDone ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' :
-                            isReviewing ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-700 shadow-md shadow-amber-100/50 dark:shadow-amber-950/50' :
-                            isActive ? 'bg-accent-50/70 dark:bg-accent-950/40 border-accent-200 dark:border-accent-700 shadow-md shadow-accent-100/50 dark:shadow-accent-950/50' :
-                            'bg-surface-50/50 dark:bg-surface-800/30 border-surface-200 dark:border-surface-700 opacity-40'
-                          }`}>
-                            {/* Agent header */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-base">{agent?.icon || '\u2699\ufe0f'}</span>
-                                <span className={`text-sm font-semibold ${
-                                  isDone ? 'text-emerald-700 dark:text-emerald-300' :
-                                  isReviewing ? 'text-amber-700 dark:text-amber-300' :
-                                  isActive ? 'text-accent-700 dark:text-accent-300' :
-                                  'text-ink-400'
-                                }`}>{step.agentName}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isDone && duration && (
-                                  <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">{duration}s</span>
-                                )}
-                                {isDone && (
-                                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-full">Complete</span>
-                                )}
-                                {isReviewing && (
-                                  <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded-full animate-pulse">Awaiting Review</span>
-                                )}
-                                {isActive && elapsed !== null && (
-                                  <span className="text-[10px] font-mono text-accent-500 dark:text-accent-400 tabular-nums">{elapsed}s</span>
-                                )}
-                                {isPending && (
-                                  <span className="text-[10px] text-ink-300">Queued</span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Active agent: live streaming text or thinking message */}
-                            {isActive && (
-                              <div className="mt-2 space-y-2">
-                                {streamingText[step.agentId] ? (
-                                  <div className="max-h-36 overflow-y-auto rounded-md bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 p-2.5">
-                                    <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-ink-500 dark:text-ink-400">
-                                      {streamingText[step.agentId].slice(-800)}
-                                      <span className="inline-block w-1.5 h-3.5 bg-accent-500 animate-pulse ml-0.5 align-middle rounded-sm" />
-                                    </pre>
-                                  </div>
-                                ) : (
-                                  <AgentThinkingMessage agentId={step.agentId} messages={messages} />
-                                )}
-                                <div className="h-1.5 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-accent-400 via-accent-500 to-accent-600 rounded-full animate-progress-indeterminate" />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* ── Checkpoint Review Panel ── */}
-                  {checkpointRequest && (
-                    <div className="mt-4 rounded-xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/40 overflow-hidden">
-                      <div className="px-4 py-2.5 border-b border-amber-200 dark:border-amber-800 bg-amber-100/60 dark:bg-amber-900/40 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">👁️</span>
-                          <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">Review: {checkpointRequest.agentName}</span>
-                        </div>
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400">Step {checkpointRequest.stepIndex + 1}/{checkpointRequest.totalSteps}</span>
-                      </div>
-                      <div className="p-3">
-                        {checkpointEditing ? (
-                          <textarea
-                            value={checkpointEditText}
-                            onChange={(e) => setCheckpointEditText(e.target.value)}
-                            className="w-full h-48 rounded-lg border border-amber-200 dark:border-amber-700 bg-white dark:bg-surface-900 text-sm text-ink-600 dark:text-ink-300 p-3 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-amber-400"
-                          />
-                        ) : (
-                          <div className="max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-700 p-3">
-                            <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-ink-500 dark:text-ink-400">{checkpointRequest.output.slice(-1500)}</pre>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 mt-3">
-                          <button
-                            onClick={() => {
-                              setCheckpointRequest(null)
-                              checkpointResolverRef.current?.({ action: 'approve' })
-                            }}
-                            className="flex-1 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition shadow-sm"
-                          >
-                            ✓ Approve & Continue
-                          </button>
-                          {checkpointEditing ? (
-                            <button
-                              onClick={() => {
-                                setCheckpointRequest(null)
-                                setCheckpointEditing(false)
-                                checkpointResolverRef.current?.({ action: 'edit', editedOutput: checkpointEditText })
-                              }}
-                              className="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition shadow-sm"
-                            >
-                              💾 Save Edit & Continue
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setCheckpointEditing(true)}
-                              className="flex-1 px-3 py-2 rounded-lg bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 text-xs font-semibold transition border border-amber-300 dark:border-amber-700"
-                            >
-                              ✏️ Edit Output
-                            </button>
-                          )}
-                          <button
-                            onClick={() => {
-                              setCheckpointRequest(null)
-                              setCheckpointEditing(false)
-                              checkpointResolverRef.current?.({ action: 'regenerate' })
-                            }}
-                            className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-ink-500 text-xs font-semibold transition border border-surface-300 dark:border-surface-600"
-                          >
-                            🔄 Regenerate
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Overall progress bar */}
-                  <div className="mt-6 space-y-2">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-ink-400">
-                        Agent {pipelineProgress.filter(s => s.status === 'completed').length + 1} of {pipelineProgress.length}
-                      </span>
-                      <span className="text-ink-400 font-mono">
-                        {Math.round((pipelineProgress.filter(s => s.status === 'completed').length / pipelineProgress.length) * 100)}%
-                      </span>
-                    </div>
-                    <div className="h-1 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-accent-500 rounded-full transition-all duration-700 ease-out"
-                        style={{ width: `${(pipelineProgress.filter(s => s.status === 'completed').length / pipelineProgress.length) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-ink-300 max-w-md">
-                  <p className="text-5xl mb-4 opacity-30">✨</p>
-                  <h3 className="text-lg font-semibold text-ink-500 mb-2">Your Content Package</h3>
-                  <p className="text-sm text-ink-400 leading-relaxed">
-                    Fill in the brief on the left and click <strong>Generate Content Package</strong>.
-                    Five specialized agents will research, write, edit, optimize, and create social posts — all in one pipeline.
-                  </p>
-                  <div className="mt-6 flex items-center justify-center gap-3 text-[11px] text-ink-300">
-                    <span>🔍 Research</span>
-                    <span>→</span>
-                    <span>✍️ Write</span>
-                    <span>→</span>
-                    <span>📝 Edit</span>
-                    <span>→</span>
-                    <span>📊 SEO</span>
-                    <span>→</span>
-                    <span>📱 Social</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Builder Mode (original) */}
           <AgentPalette agents={allAgents} onAddAgent={addAgentNode} onCreateAgent={addCustomAgent} onDeleteAgent={deleteCustomAgent} />
 
           <div className="flex-1 flex flex-col">
             {/* Canvas */}
-            <div className={`${showOutputPanel ? 'h-1/2' : 'flex-1'} relative transition-all`}>
+            <div className={`${(showOutputPanel || (isRunning && pipelineProgress.length > 0)) ? 'h-1/2' : 'flex-1'} relative transition-all`}>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -1190,6 +689,35 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
                 >
                   {isSaving ? <><span className="animate-spin">⏳</span> Saving...</> : savedWorkflowId ? '💾 Update' : '💾 Save'}
                 </button>
+                {/* HITL Toggle */}
+                <label className="flex items-center gap-1.5 cursor-pointer glass-card px-3 py-2">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={humanInTheLoop}
+                      onChange={(e) => setHumanInTheLoop(e.target.checked)}
+                      disabled={isRunning}
+                      className="sr-only peer"
+                    />
+                    <div className="w-7 h-3.5 bg-surface-300 dark:bg-surface-600 rounded-full peer-checked:bg-amber-500 peer-disabled:opacity-50 transition-colors" />
+                    <div className="absolute left-0.5 top-0.5 w-2.5 h-2.5 bg-white rounded-full peer-checked:translate-x-3.5 transition-transform shadow-sm" />
+                  </div>
+                  <span className="text-[11px] text-ink-500 dark:text-ink-400">👁️ HITL</span>
+                </label>
+                {isRunning && (
+                  <button
+                    onClick={() => {
+                      abortControllerRef.current?.abort()
+                      if (checkpointResolverRef.current) {
+                        checkpointResolverRef.current({ action: 'approve' })
+                        setCheckpointRequest(null)
+                      }
+                    }}
+                    className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-md flex items-center gap-1 transition text-[11px] font-semibold border border-red-300/30"
+                  >
+                    ✕ Cancel
+                  </button>
+                )}
                 <button onClick={runWorkflow} disabled={isRunning || nodes.length === 0}
                   className="px-3.5 py-2 bg-accent-600 hover:bg-accent-500 disabled:bg-surface-300 disabled:text-ink-300 text-white rounded-md flex items-center gap-1.5 transition text-xs font-medium">
                   {isRunning ? <><span className="animate-spin">⏳</span> Running...</> : <>▶️ Run Workflow</>}
@@ -1219,8 +747,188 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
               )}
             </div>
 
-            {/* Output Panel (builder mode) */}
-            {showOutputPanel && executionOutputs && (
+            {/* ── Live Pipeline Tracker (shown while running) ── */}
+            {isRunning && pipelineProgress.length > 0 && (
+              <div className="h-1/2 border-t border-surface-300 bg-card/95 backdrop-blur-sm flex flex-col overflow-y-auto">
+                <div className="flex-1 p-6">
+                  <div className="max-w-xl mx-auto">
+                    {/* Header with live pulse */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-500" />
+                        </span>
+                        <span className="text-xs font-semibold text-accent-700 dark:text-accent-300">
+                          {checkpointRequest ? '👁️ Awaiting Review' : `Agent ${pipelineProgress.filter(s => s.status === 'completed').length + 1}/${pipelineProgress.length}`}
+                        </span>
+                      </div>
+                      {humanInTheLoop && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400">👁️ HITL on</span>
+                      )}
+                    </div>
+
+                    {/* Agent Timeline */}
+                    <div className="space-y-1">
+                      {pipelineProgress.map((step, i) => {
+                        const agent = allAgents.find(a => a.id === step.agentId)
+                        const isActive = step.status === 'running'
+                        const isDone = step.status === 'completed'
+                        const isPending = step.status === 'pending'
+                        const isReviewing = step.status === 'reviewing'
+                        const messages = AGENT_THINKING_MESSAGES[step.agentId] || ['Processing...']
+                        const elapsed = isActive && step.startedAt ? Math.floor((Date.now() - step.startedAt) / 1000) : null
+                        const duration = isDone && step.startedAt && step.completedAt ? ((step.completedAt - step.startedAt) / 1000).toFixed(1) : null
+
+                        return (
+                          <div key={`${step.agentId}-${i}`} className="flex items-stretch gap-3">
+                            {/* Timeline connector */}
+                            <div className="flex flex-col items-center w-8 shrink-0">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 border-2 transition-all duration-500 ${
+                                isDone ? 'bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-600' :
+                                isReviewing ? 'bg-amber-100 dark:bg-amber-900 border-amber-400 dark:border-amber-600 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/50 scale-110' :
+                                isActive ? 'bg-accent-100 dark:bg-accent-900 border-accent-400 dark:border-accent-500 shadow-lg shadow-accent-200/50 dark:shadow-accent-900/50 scale-110' :
+                                'bg-surface-100 dark:bg-surface-800 border-surface-300 dark:border-surface-600'
+                              }`}>
+                                {isDone ? '✅' : isReviewing ? (
+                                  <span className="text-xs">👁️</span>
+                                ) : isActive ? (
+                                  <span className="animate-spin text-xs">⚙️</span>
+                                ) : (
+                                  <span className="text-ink-300 text-[10px] font-bold">{i + 1}</span>
+                                )}
+                              </div>
+                              {i < pipelineProgress.length - 1 && (
+                                <div className={`w-0.5 flex-1 min-h-[20px] transition-all duration-700 ${
+                                  isDone ? 'bg-emerald-300 dark:bg-emerald-700' :
+                                  isReviewing ? 'bg-amber-300 dark:bg-amber-700' :
+                                  isActive ? 'bg-gradient-to-b from-accent-400 to-surface-200 dark:from-accent-600 dark:to-surface-700' :
+                                  'bg-surface-200 dark:bg-surface-700'
+                                }`} />
+                              )}
+                            </div>
+
+                            {/* Agent Card */}
+                            <div className={`flex-1 rounded-lg px-4 py-3 mb-1 transition-all duration-500 border ${
+                              isDone ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' :
+                              isReviewing ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-700 shadow-md' :
+                              isActive ? 'bg-accent-50/70 dark:bg-accent-950/40 border-accent-200 dark:border-accent-700 shadow-md' :
+                              'bg-surface-50/50 dark:bg-surface-800/30 border-surface-200 dark:border-surface-700 opacity-40'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-base">{agent?.icon || '⚙️'}</span>
+                                  <span className={`text-sm font-semibold ${
+                                    isDone ? 'text-emerald-700 dark:text-emerald-300' :
+                                    isReviewing ? 'text-amber-700 dark:text-amber-300' :
+                                    isActive ? 'text-accent-700 dark:text-accent-300' :
+                                    'text-ink-400'
+                                  }`}>{step.agentName}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isDone && duration && <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">{duration}s</span>}
+                                  {isDone && <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-full">Complete</span>}
+                                  {isReviewing && <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded-full animate-pulse">Awaiting Review</span>}
+                                  {isActive && elapsed !== null && <span className="text-[10px] font-mono text-accent-500 dark:text-accent-400 tabular-nums">{elapsed}s</span>}
+                                  {isPending && <span className="text-[10px] text-ink-300">Queued</span>}
+                                </div>
+                              </div>
+
+                              {/* Active agent: live streaming text or thinking message */}
+                              {isActive && (
+                                <div className="mt-2 space-y-2">
+                                  {streamingText[step.agentId] ? (
+                                    <div className="max-h-36 overflow-y-auto rounded-md bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 p-2.5">
+                                      <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-ink-500 dark:text-ink-400">
+                                        {streamingText[step.agentId].slice(-800)}
+                                        <span className="inline-block w-1.5 h-3.5 bg-accent-500 animate-pulse ml-0.5 align-middle rounded-sm" />
+                                      </pre>
+                                    </div>
+                                  ) : (
+                                    <AgentThinkingMessage agentId={step.agentId} messages={messages} />
+                                  )}
+                                  <div className="h-1.5 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-accent-400 via-accent-500 to-accent-600 rounded-full animate-progress-indeterminate" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* ── Checkpoint Review Panel ── */}
+                    {checkpointRequest && (
+                      <div className="mt-4 rounded-xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-950/40 overflow-hidden">
+                        <div className="px-4 py-2.5 border-b border-amber-200 dark:border-amber-800 bg-amber-100/60 dark:bg-amber-900/40 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">👁️</span>
+                            <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">Review: {checkpointRequest.agentName}</span>
+                          </div>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400">Step {checkpointRequest.stepIndex + 1}/{checkpointRequest.totalSteps}</span>
+                        </div>
+                        <div className="p-3">
+                          {checkpointEditing ? (
+                            <textarea
+                              value={checkpointEditText}
+                              onChange={(e) => setCheckpointEditText(e.target.value)}
+                              className="w-full h-48 rounded-lg border border-amber-200 dark:border-amber-700 bg-white dark:bg-surface-900 text-sm text-ink-600 dark:text-ink-300 p-3 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            />
+                          ) : (
+                            <div className="max-h-48 overflow-y-auto rounded-lg bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-700 p-3">
+                              <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-ink-500 dark:text-ink-400">{checkpointRequest.output.slice(-1500)}</pre>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 mt-3">
+                            <button
+                              onClick={() => { setCheckpointRequest(null); checkpointResolverRef.current?.({ action: 'approve' }) }}
+                              className="flex-1 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition shadow-sm"
+                            >✓ Approve & Continue</button>
+                            {checkpointEditing ? (
+                              <button
+                                onClick={() => { setCheckpointRequest(null); setCheckpointEditing(false); checkpointResolverRef.current?.({ action: 'edit', editedOutput: checkpointEditText }) }}
+                                className="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition shadow-sm"
+                              >💾 Save Edit & Continue</button>
+                            ) : (
+                              <button
+                                onClick={() => setCheckpointEditing(true)}
+                                className="flex-1 px-3 py-2 rounded-lg bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 text-xs font-semibold transition border border-amber-300 dark:border-amber-700"
+                              >✏️ Edit Output</button>
+                            )}
+                            <button
+                              onClick={() => { setCheckpointRequest(null); setCheckpointEditing(false); checkpointResolverRef.current?.({ action: 'regenerate' }) }}
+                              className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-ink-500 text-xs font-semibold transition border border-surface-300 dark:border-surface-600"
+                            >🔄 Regenerate</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overall progress bar */}
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-ink-400">
+                          Agent {pipelineProgress.filter(s => s.status === 'completed').length + 1} of {pipelineProgress.length}
+                        </span>
+                        <span className="text-ink-400 font-mono">
+                          {Math.round((pipelineProgress.filter(s => s.status === 'completed').length / pipelineProgress.length) * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-1 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent-500 rounded-full transition-all duration-700 ease-out"
+                          style={{ width: `${(pipelineProgress.filter(s => s.status === 'completed').length / pipelineProgress.length) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Output Panel (shown after execution completes) */}
+            {!isRunning && showOutputPanel && executionOutputs && (
               <div className="h-1/2 border-t border-surface-300 bg-card/95 backdrop-blur-sm flex flex-col">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-300">
                   <h3 className="text-xs font-semibold text-ink-700 flex items-center gap-2">
@@ -1275,7 +983,6 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
             />
           )}
         </>
-      )}
 
       </div>{/* end flex-1 flex overflow-hidden */}
 
