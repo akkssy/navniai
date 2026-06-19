@@ -285,6 +285,13 @@ export const AGENT_DEFAULT_TOOLS: Record<string, string[]> = {
   generator: ['rag_search', 'scratchpad'],
   reviewer: ['rag_search', 'scratchpad'],
   debugger: ['web_search', 'rag_search'],
+  // ─── Viral Social Media Agents ───
+  trend_scout: ['web_search', 'scratchpad'],
+  hook_generator: ['scratchpad'],
+  reel_scripter: ['scratchpad'],
+  viral_scorer: ['scratchpad'],
+  platform_adapter: ['scratchpad'],
+  carousel_writer: ['scratchpad'],
 }
 
 /** Get the tools enabled for a given agent, with fallback */

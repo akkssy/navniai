@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = (session?.user as { id?: string })?.id
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const agents = await prisma.customAgent.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     orderBy: { createdAt: 'asc' },
   })
 
@@ -27,7 +28,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = (session?.user as { id?: string })?.id
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id, name, type, icon, systemPrompt, ...rest } = await request.json()
 
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
   let agent
   if (id) {
     // Check ownership first
-    const existing = await prisma.customAgent.findFirst({ where: { id, userId: session.user.id } })
+    const existing = await prisma.customAgent.findFirst({ where: { id, userId } })
     if (existing) {
       agent = await prisma.customAgent.update({
         where: { id },
@@ -47,12 +49,12 @@ export async function POST(request: NextRequest) {
       })
     } else {
       agent = await prisma.customAgent.create({
-        data: { id, userId: session.user.id, name, type: type || 'custom', icon: icon || '🤖', systemPrompt: systemPrompt || '', config },
+        data: { id, userId, name, type: type || 'custom', icon: icon || '🤖', systemPrompt: systemPrompt || '', config },
       })
     }
   } else {
     agent = await prisma.customAgent.create({
-      data: { userId: session.user.id, name, type: type || 'custom', icon: icon || '🤖', systemPrompt: systemPrompt || '', config },
+      data: { userId, name, type: type || 'custom', icon: icon || '🤖', systemPrompt: systemPrompt || '', config },
     })
   }
 
@@ -61,13 +63,14 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = (session?.user as { id?: string })?.id
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  const agent = await prisma.customAgent.findFirst({ where: { id, userId: session.user.id } })
+  const agent = await prisma.customAgent.findFirst({ where: { id, userId } })
   if (!agent) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   await prisma.customAgent.delete({ where: { id } })

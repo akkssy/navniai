@@ -229,7 +229,7 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <QuickAction title="Content Pipeline" description="Generate content packages" href="/workflow/builder" icon="✨" />
-          <QuickAction title="Browse Templates" description="Pre-built workflow templates" href="/templates" icon="📚" />
+          <QuickAction title="Viral Social" description="Trend → Hooks → Content → Score" href="/workflow/builder?template=viral-social" icon="🔥" />
           <QuickAction title="Knowledge Base" description="Upload docs for RAG context" href="/knowledge" icon="🧠" />
           <QuickAction title="Documentation" description="Learn about agent orchestration" href="/docs" icon="📖" />
         </div>

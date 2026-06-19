@@ -69,6 +69,16 @@ export const MARKETING_AGENTS: Agent[] = [
   { id: 'social_writer', name: 'Social Media Writer', icon: '📱', color: '#ec4899', description: 'Platform-native posts for LinkedIn, X, Instagram & email', category: 'system' },
 ]
 
+// Viral Social Media agents (purpose-built for viral content pipelines)
+export const VIRAL_SOCIAL_AGENTS: Agent[] = [
+  { id: 'trend_scout', name: 'Trend Scout', icon: '📈', color: '#f97316', description: 'Discover high-velocity viral trends across niches using web search', category: 'system' },
+  { id: 'hook_generator', name: 'Hook Generator', icon: '🪝', color: '#ef4444', description: 'Generate 8 viral hook variants (curiosity, contrarian, FOMO, authority)', category: 'system' },
+  { id: 'reel_scripter', name: 'Reel Scripter', icon: '🎬', color: '#a855f7', description: 'Create Instagram Reel scripts with hook-loop-value-CTA structure', category: 'system' },
+  { id: 'carousel_writer', name: 'Carousel Writer', icon: '🎠', color: '#06b6d4', description: 'Generate slide-by-slide carousel content for Instagram & LinkedIn', category: 'system' },
+  { id: 'viral_scorer', name: 'Viral Scorer', icon: '⚡', color: '#eab308', description: 'Score content on hook strength, shareability, platform fit & CTA clarity', category: 'system' },
+  { id: 'platform_adapter', name: 'Platform Adapter', icon: '🔧', color: '#10b981', description: 'Reformat content for platform-specific constraints & algorithm signals', category: 'system' },
+]
+
 // Keep backward compat export
 export const AGENTS = SYSTEM_AGENTS
 
@@ -230,8 +240,9 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     if (!template) return
     templateLoaded.current = true
 
+    const allBuiltInAgents = [...MARKETING_AGENTS, ...VIRAL_SOCIAL_AGENTS, ...SYSTEM_AGENTS]
     const templateNodes: Node[] = template.steps.map((step, i) => {
-      const agent = SYSTEM_AGENTS.find(a => a.id === step.agentId) || SYSTEM_AGENTS[0]
+      const agent = allBuiltInAgents.find(a => a.id === step.agentId) || SYSTEM_AGENTS[0]
       return {
         id: `${step.agentId}-tpl-${i}`,
         type: 'agentNode',
@@ -255,6 +266,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
 
     setNodes(templateNodes)
     setEdges(templateEdges)
+    setMode('builder') // Templates load into builder mode
   }, [templateId, setNodes, setEdges])
 
   // ─── Auto-load workflow from URL param (?workflowId=<id>) ───
@@ -294,7 +306,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     })
   }, [runId])
 
-  const allAgents = [...MARKETING_AGENTS, ...SYSTEM_AGENTS, ...customAgents]
+  const allAgents = [...MARKETING_AGENTS, ...VIRAL_SOCIAL_AGENTS, ...SYSTEM_AGENTS, ...customAgents]
 
   const addCustomAgent = useCallback((agent: Agent) => {
     setCustomAgents(prev => {

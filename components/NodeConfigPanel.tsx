@@ -153,6 +153,64 @@ const SYSTEM_AGENT_ACTIONS: Record<string, AgentAction[]> = {
       { key: 'task', label: 'Social Media Task', type: 'textarea', placeholder: 'Describe what to create...', required: true },
     ]},
   ],
+  // ─── Viral Social Media Agents ───
+  trend_scout: [
+    { id: 'discover_trends', label: 'Discover Viral Trends', inputs: [
+      { key: 'niche', label: 'Niche / Industry', type: 'text', placeholder: 'e.g. "AI tools", "fitness", "personal finance"', required: true },
+      { key: 'persona', label: 'Target Persona', type: 'text', placeholder: 'e.g. "IT professionals", "startup founders"' },
+      { key: 'timeframe', label: 'Timeframe', type: 'text', placeholder: 'last 24h (default)' },
+    ]},
+    { id: 'execute', label: 'Custom Trend Research', inputs: [
+      { key: 'task', label: 'Research Task', type: 'textarea', placeholder: 'Describe what trends to find...', required: true },
+    ]},
+  ],
+  hook_generator: [
+    { id: 'generate_hooks', label: 'Generate 8 Viral Hooks', inputs: [
+      { key: 'trend', label: 'Trend / Topic', type: 'textarea', placeholder: 'Paste trend or use {{trend_scout.output}}...', required: true },
+      { key: 'persona', label: 'Target Persona', type: 'text', placeholder: 'e.g. "IT professionals", "startup founders"' },
+    ]},
+    { id: 'execute', label: 'Custom Hook Task', inputs: [
+      { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe what hooks to generate...', required: true },
+    ]},
+  ],
+  reel_scripter: [
+    { id: 'write_reel_script', label: 'Write Reel Script (60s)', inputs: [
+      { key: 'hook', label: 'Selected Hook', type: 'textarea', placeholder: 'Paste hook or use {{hook_generator.output}}...', required: true },
+      { key: 'topic', label: 'Topic / Context', type: 'textarea', placeholder: 'Background context for the reel content...' },
+    ]},
+    { id: 'execute', label: 'Custom Reel Task', inputs: [
+      { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe what reel to create...', required: true },
+    ]},
+  ],
+  carousel_writer: [
+    { id: 'write_carousel', label: 'Write Carousel (8-10 Slides)', inputs: [
+      { key: 'hook', label: 'Selected Hook', type: 'textarea', placeholder: 'Paste hook or use {{hook_generator.output}}...', required: true },
+      { key: 'topic', label: 'Topic / Context', type: 'textarea', placeholder: 'Background context for the carousel...' },
+      { key: 'platform', label: 'Platform', type: 'text', placeholder: 'Instagram / LinkedIn (default: both)' },
+    ]},
+    { id: 'execute', label: 'Custom Carousel Task', inputs: [
+      { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe what carousel to create...', required: true },
+    ]},
+  ],
+  viral_scorer: [
+    { id: 'score_content', label: 'Score Viral Potential', inputs: [
+      { key: 'content', label: 'Content to Score', type: 'textarea', placeholder: 'Paste content or use {{reel_scripter.output}}...', required: true },
+      { key: 'platform', label: 'Target Platform', type: 'text', placeholder: 'Instagram / X / LinkedIn' },
+      { key: 'persona', label: 'Target Persona', type: 'text', placeholder: 'Who is this for?' },
+    ]},
+    { id: 'execute', label: 'Custom Scoring Task', inputs: [
+      { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe what to evaluate...', required: true },
+    ]},
+  ],
+  platform_adapter: [
+    { id: 'adapt_content', label: 'Adapt for All Platforms', inputs: [
+      { key: 'content', label: 'Source Content', type: 'textarea', placeholder: 'Paste content or use {{viral_scorer.output}}...', required: true },
+      { key: 'platforms', label: 'Platforms', type: 'text', placeholder: 'X, Instagram, LinkedIn, Facebook (default: all)' },
+    ]},
+    { id: 'execute', label: 'Custom Adaptation', inputs: [
+      { key: 'task', label: 'Task', type: 'textarea', placeholder: 'Describe what to adapt...', required: true },
+    ]},
+  ],
 }
 
 // Resolve actions: use agent.actions for custom agents, SYSTEM_AGENT_ACTIONS for system agents

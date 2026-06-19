@@ -5,9 +5,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = (session?.user as { id?: string })?.id
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const row = await prisma.lLMSettings.findUnique({ where: { userId: session.user.id } })
+  const row = await prisma.lLMSettings.findUnique({ where: { userId } })
   if (!row) return NextResponse.json({ ok: true, settings: null })
 
   return NextResponse.json({
@@ -22,14 +23,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = (session?.user as { id?: string })?.id
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { activeProvider, fallbackChain, providers } = await request.json()
 
   await prisma.lLMSettings.upsert({
-    where: { userId: session.user.id },
+    where: { userId },
     create: {
-      userId: session.user.id,
+      userId,
       activeProvider: activeProvider || 'ollama',
       fallbackChain: Array.isArray(fallbackChain) ? fallbackChain.join(',') : fallbackChain || '',
       providersJson: JSON.stringify(providers || {}),

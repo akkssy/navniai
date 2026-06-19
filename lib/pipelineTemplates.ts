@@ -1,4 +1,4 @@
-import { SYSTEM_AGENTS } from '@/components/WorkflowBuilder'
+import { SYSTEM_AGENTS, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from '@/components/WorkflowBuilder'
 
 export interface PipelineStep {
   agentId: string       // references SYSTEM_AGENTS id
@@ -20,8 +20,10 @@ export interface PipelineTemplate {
   steps: PipelineStep[]
 }
 
+const ALL_AGENTS = [...SYSTEM_AGENTS, ...MARKETING_AGENTS, ...VIRAL_SOCIAL_AGENTS]
+
 export function getAgentForStep(step: PipelineStep) {
-  return SYSTEM_AGENTS.find(a => a.id === step.agentId)
+  return ALL_AGENTS.find(a => a.id === step.agentId)
 }
 
 export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
@@ -335,6 +337,26 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
       { agentId: 'security', action: 'execute', label: 'Impact Assessment', inputs: { task: 'Assess security and business impact: data exposure risk, SLA breach potential, affected customer count, and revenue impact.' } },
       { agentId: 'generator', action: 'execute', label: 'Runbook Execution', inputs: { task: 'Generate step-by-step mitigation runbook: rollback procedures, feature flags, traffic rerouting, and communication templates.' } },
       { agentId: 'documenter', action: 'execute', label: 'Post-Mortem', inputs: { task: 'Create a blameless post-mortem: timeline, root cause analysis, contributing factors, action items with owners, and prevention measures.' } },
+    ],
+  },
+  // ─── Viral Social Media ───
+  {
+    id: 'viral-social',
+    name: 'Viral Social Orchestrator',
+    icon: '🔥',
+    color: '#f97316',
+    category: 'Social Media',
+    description: 'End-to-end viral content pipeline: discover trends, generate hooks, create platform-specific content, score viral potential, and adapt for each platform.',
+    status: 'popular',
+    runs: 0,
+    lastRun: 'New',
+    steps: [
+      { agentId: 'trend_scout', action: 'discover_trends', label: 'Trend Discovery', inputs: { niche: 'Enter your niche...', persona: 'Enter target persona...', timeframe: 'last 24h' } },
+      { agentId: 'hook_generator', action: 'generate_hooks', label: 'Generate Viral Hooks', inputs: { trend: '{{trend_scout.output}}', persona: 'Enter target persona...' } },
+      { agentId: 'reel_scripter', action: 'write_reel_script', label: 'Reel Script', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}' } },
+      { agentId: 'carousel_writer', action: 'write_carousel', label: 'Carousel Content', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}', platform: 'Instagram, LinkedIn' } },
+      { agentId: 'viral_scorer', action: 'score_content', label: 'Viral Score', inputs: { content: '{{reel_scripter.output}}\n\n---\n\n{{carousel_writer.output}}', platform: 'Instagram', persona: 'Enter target persona...' } },
+      { agentId: 'platform_adapter', action: 'adapt_content', label: 'Platform Adaptation', inputs: { content: '{{viral_scorer.output}}\n\nOriginal Reel:\n{{reel_scripter.output}}\n\nOriginal Carousel:\n{{carousel_writer.output}}', platforms: 'X, Instagram, LinkedIn, Facebook' } },
     ],
   },
 ]

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Agent, AgentAction, MARKETING_AGENTS } from './WorkflowBuilder'
+import { Agent, AgentAction, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from './WorkflowBuilder'
 
 const ICON_OPTIONS = ['🤖', '📄', '💬', '📊', '⚖️', '📧', '💡', '✍️', '📱', '🎯', '🏥', '🏦', '🎓', '🛒', '📑', '🚩', '👥', '📋', '🔧', '🎨']
 const COLOR_OPTIONS = ['#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#a855f7']
@@ -134,8 +134,10 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
   const [activeTab, setActiveTab] = useState<'agents' | 'templates'>('agents')
 
   const marketingAgentIds = new Set(MARKETING_AGENTS.map(a => a.id))
+  const viralAgentIds = new Set(VIRAL_SOCIAL_AGENTS.map(a => a.id))
   const marketingAgents = agents.filter(a => a.category === 'system' && marketingAgentIds.has(a.id))
-  const codingAgents = agents.filter(a => a.category === 'system' && !marketingAgentIds.has(a.id))
+  const viralAgents = agents.filter(a => a.category === 'system' && viralAgentIds.has(a.id))
+  const codingAgents = agents.filter(a => a.category === 'system' && !marketingAgentIds.has(a.id) && !viralAgentIds.has(a.id))
   const customAgents = agents.filter(a => a.category === 'custom')
   const existingIds = new Set(agents.map(a => a.name.toLowerCase()))
 
@@ -195,6 +197,14 @@ export function AgentPalette({ agents, onAddAgent, onCreateAgent, onDeleteAgent 
           <p className="section-label mb-2">✨ Content Marketing</p>
           <div className="space-y-1.5 mb-4">
             {marketingAgents.map((agent) => (
+              <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} />
+            ))}
+          </div>
+
+          {/* Viral Social Agents */}
+          <p className="section-label mb-2">🔥 Viral Social</p>
+          <div className="space-y-1.5 mb-4">
+            {viralAgents.map((agent) => (
               <AgentButton key={agent.id} agent={agent} onAdd={onAddAgent} />
             ))}
           </div>
