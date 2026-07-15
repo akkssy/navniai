@@ -287,9 +287,11 @@ export const AGENT_DEFAULT_TOOLS: Record<string, string[]> = {
   debugger: ['web_search', 'rag_search'],
   // ─── Viral Social Media Agents ───
   trend_scout: ['web_search', 'scratchpad'],
+  audience_persona: ['web_search', 'scratchpad'],
   hook_generator: ['scratchpad'],
   reel_scripter: ['scratchpad'],
   viral_scorer: ['scratchpad'],
+  angle_rotator: ['scratchpad'],
   platform_adapter: ['scratchpad'],
   carousel_writer: ['scratchpad'],
 }

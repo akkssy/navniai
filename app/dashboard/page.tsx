@@ -3,6 +3,9 @@
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const OnboardingWizard = dynamic(() => import('@/components/OnboardingWizard'), { ssr: false })
 import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
@@ -45,6 +48,22 @@ export default function Dashboard() {
   const [usingApi, setUsingApi] = useState(false)
   const [savedWorkflows, setSavedWorkflows] = useState<{ id: string; name: string; updatedAt: string }[]>([])
   const [loadingWorkflows, setLoadingWorkflows] = useState(true)
+  const [templateCounts, setTemplateCounts] = useState<Record<string, { count: number; lastRunAt: string | null }>>({})
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Show onboarding wizard once for new users
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('navniai_onboarding_v1')) {
+      setShowOnboarding(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/runs?counts=true')
+      .then(r => r.json())
+      .then(data => { if (data.ok) setTemplateCounts(data.counts) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetch('/api/workflows').then(r => r.json()).then(data => {
@@ -80,6 +99,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen">
+      {showOnboarding && <OnboardingWizard onDismiss={() => setShowOnboarding(false)} />}
       {/* Header */}
       <header className="border-b border-surface-300 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-3.5">
@@ -221,7 +241,7 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-surface-300">
             {workflows.map((workflow) => (
-              <WorkflowRow key={workflow.id} workflow={workflow} />
+              <WorkflowRow key={workflow.id} workflow={workflow} realCounts={templateCounts[workflow.id]} />
             ))}
           </div>
         </div>
@@ -247,8 +267,10 @@ function StatCard({ label, value, accent }: { label: string, value: string, acce
   )
 }
 
-function WorkflowRow({ workflow }: { workflow: any }) {
+function WorkflowRow({ workflow, realCounts }: { workflow: any; realCounts?: { count: number; lastRunAt: string | null } }) {
   const stepAgents = workflow.steps.map((s: any) => ({ ...s, agent: getAgentForStep(s) }))
+  const displayRuns = realCounts ? realCounts.count : null
+  const displayLastRun = realCounts?.lastRunAt ? getTimeAgo(realCounts.lastRunAt) : null
   return (
     <div className="px-6 py-5 hover:bg-surface-50 transition-colors">
       <div className="flex items-center justify-between mb-3">
@@ -269,9 +291,9 @@ function WorkflowRow({ workflow }: { workflow: any }) {
           <div className="flex items-center gap-4 mt-1.5 text-xs text-ink-400">
             <span className="flex items-center gap-1">
               <ClockIcon className="h-3.5 w-3.5" />
-              Last run: {workflow.lastRun}
+              {displayLastRun ? `Last run: ${displayLastRun}` : 'Never run'}
             </span>
-            <span>{workflow.runs} total runs</span>
+            <span>{displayRuns !== null ? `${displayRuns} run${displayRuns !== 1 ? 's' : ''}` : 'No runs yet'}</span>
           </div>
         </div>
         <div className="flex gap-2">

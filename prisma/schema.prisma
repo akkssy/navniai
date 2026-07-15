@@ -140,6 +140,7 @@ model LLMSettings {
   activeProvider String @default("ollama")
   fallbackChain  String @default("ollama,groq,openai,openrouter") // comma-separated
   providersJson  String @default("{}") // JSON of provider configs
+  brandVoice     String @default("") // User's brand voice / persona injected into every agent
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

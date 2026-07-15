@@ -18,6 +18,7 @@ export interface LLMSettings {
   activeProvider: LLMProviderKey
   fallbackChain: LLMProviderKey[]
   providers: Record<LLMProviderKey, LLMUserConfig>
+  brandVoice?: string  // User's brand voice / persona injected into every agent system prompt
 }
 
 export interface LLMCallResult {
@@ -150,14 +151,25 @@ async function withRetry<T>(
 
 // --- API Call Functions ---
 
+// Build the shared /api/generate request body. For qwen3 models we disable the
+// internal reasoning pass via the `think: false` option — appending "/no_think"
+// to the prompt is ignored by the generate endpoint and leaves reasoning on,
+// which makes calls ~30x slower and pollutes the output.
+function buildOllamaBody(model: string, msg: string, sys: string, cfg: LLMUserConfig) {
+  const body: Record<string, unknown> = {
+    model, prompt: msg, system: sys,
+    options: { temperature: cfg.temperature ?? 0.7, num_predict: cfg.maxTokens ?? 2000 },
+  }
+  if (model.startsWith('qwen3')) body.think = false
+  return body
+}
+
 async function callOllamaProvider(sys: string, msg: string, cfg: LLMUserConfig, ms: number, signal?: AbortSignal): Promise<string> {
   const base = cfg.baseUrl || 'http://localhost:11434'
   const model = cfg.model || 'qwen3:8b'
-  // Append /no_think for qwen3 models to disable internal reasoning (saves time & tokens)
-  const finalPrompt = model.startsWith('qwen3') ? msg + ' /no_think' : msg
   const res = await fetch(`${base}/api/generate`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, prompt: finalPrompt, system: sys, stream: false }),
+    body: JSON.stringify({ ...buildOllamaBody(model, msg, sys, cfg), stream: false }),
     signal: makeSignal(ms, signal),
   })
   if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
@@ -340,6 +352,7 @@ export async function callLLMWithFallback(
     }
   }
   // Final fallback: simulated response
+  console.error('[NavniAI] All LLM providers failed (non-streaming):', errors)
   return {
     text: `[Simulated] All providers failed (${errors.join('; ')}). Input: ${userMessage.slice(0, 200)}`,
     provider: 'simulated',
@@ -375,10 +388,9 @@ async function readStreamLines(body: ReadableStream<Uint8Array>, processLine: (l
 async function streamOllamaProvider(sys: string, msg: string, cfg: LLMUserConfig, ms: number, onChunk: OnChunkCallback, signal?: AbortSignal): Promise<string> {
   const base = cfg.baseUrl || 'http://localhost:11434'
   const model = cfg.model || 'qwen3:8b'
-  const finalPrompt = model.startsWith('qwen3') ? msg + ' /no_think' : msg
   const res = await fetch(`${base}/api/generate`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, prompt: finalPrompt, system: sys, stream: true }),
+    body: JSON.stringify({ ...buildOllamaBody(model, msg, sys, cfg), stream: true }),
     signal: makeSignal(ms, signal),
   })
   if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
@@ -566,6 +578,7 @@ export async function callLLMWithFallbackStreaming(
       errors.push(`${key}: ${msg}`)
     }
   }
+  console.error('[NavniAI] All LLM providers failed:', errors)
   const simText = `[Simulated] All providers failed (${errors.join('; ')}). Input: ${userMessage.slice(0, 200)}`
   onChunk(simText)
   return { text: simText, provider: 'simulated' }

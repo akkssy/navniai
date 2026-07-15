@@ -152,6 +152,33 @@ export default function SettingsPage() {
           })}
         </section>
 
+        {/* Brand Voice */}
+        <section className="glass-card p-6">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h2 className="text-sm font-semibold text-ink-700">Brand Voice</h2>
+              <p className="text-[11px] text-ink-300 mt-0.5">
+                Written once, injected into every agent&apos;s system prompt automatically.
+              </p>
+            </div>
+            {settings.brandVoice?.trim() && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400">
+                ✓ Active
+              </span>
+            )}
+          </div>
+          <textarea
+            value={settings.brandVoice || ''}
+            onChange={e => update(s => ({ ...s, brandVoice: e.target.value }))}
+            placeholder={`Describe your brand voice so every agent writes in your style.\n\nExamples:\n• "I'm a startup founder. Write punchy, 1-sentence takes. No corporate buzzwords. Direct and opinionated."\n• "I write for senior engineers. Assume deep technical knowledge. Be precise, skip basics."\n• "Friendly but professional. Use short paragraphs. Always end with a clear CTA."`}
+            rows={6}
+            className="w-full mt-4 bg-surface-50 border border-surface-300 rounded-lg px-3 py-2.5 text-xs text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition resize-none leading-relaxed"
+          />
+          <p className="text-[10px] text-ink-300 mt-2">
+            💡 Tip: include your role, audience, preferred tone, and anything to avoid.
+          </p>
+        </section>
+
         {/* Fallback Chain */}
         <section className="glass-card p-6">
           <h2 className="text-sm font-semibold mb-2 text-ink-700">Fallback Chain</h2>

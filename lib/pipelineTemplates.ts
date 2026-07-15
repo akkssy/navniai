@@ -7,6 +7,16 @@ export interface PipelineStep {
   inputs: Record<string, string>
 }
 
+export interface BriefField {
+  key: string                                           // matches an input key inside step.inputs
+  label: string                                         // human-readable label shown in the form
+  placeholder: string                                   // example / hint text
+  required?: boolean
+  type?: 'text' | 'textarea' | 'select'
+  options?: string[]                                    // for type:'select'
+  defaultValue?: string
+}
+
 export interface PipelineTemplate {
   id: string
   name: string
@@ -18,6 +28,7 @@ export interface PipelineTemplate {
   runs: number
   lastRun: string
   steps: PipelineStep[]
+  briefFields?: BriefField[]                           // if set, shown as a form before the builder opens
 }
 
 const ALL_AGENTS = [...SYSTEM_AGENTS, ...MARKETING_AGENTS, ...VIRAL_SOCIAL_AGENTS]
@@ -38,9 +49,12 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 245,
     lastRun: '2 hours ago',
     steps: [
-      { agentId: 'security', action: 'execute', label: 'Security Scan', inputs: { task: 'Scan the PR diff for security vulnerabilities, exposed secrets, and unsafe patterns.' } },
-      { agentId: 'reviewer', action: 'execute', label: 'Code Review', inputs: { task: 'Review code quality: naming, complexity, SOLID principles, and potential bugs.' } },
-      { agentId: 'documenter', action: 'execute', label: 'Summary Report', inputs: { task: 'Compile a PR review summary from the security scan and code review findings.' } },
+      { agentId: 'security', action: 'execute', label: 'Security Scan', inputs: { context: '', task: 'Scan the PR diff for security vulnerabilities, exposed secrets, and unsafe patterns.' } },
+      { agentId: 'reviewer', action: 'execute', label: 'Code Review', inputs: { context: '', task: 'Review code quality: naming, complexity, SOLID principles, and potential bugs.' } },
+      { agentId: 'documenter', action: 'execute', label: 'Summary Report', inputs: { context: '', task: 'Compile a PR review summary from the security scan and code review findings.' } },
+    ],
+    briefFields: [
+      { key: 'context', label: 'PR Description / Diff', placeholder: 'Paste the PR description, key changes, or a relevant code snippet…', required: true, type: 'textarea' },
     ],
   },
   {
@@ -54,10 +68,13 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 187,
     lastRun: '1 day ago',
     steps: [
-      { agentId: 'generator', action: 'execute', label: 'Generate Code', inputs: { task: 'Generate the implementation for the requested feature following project conventions.' } },
-      { agentId: 'tester', action: 'execute', label: 'Write Tests', inputs: { task: 'Write comprehensive unit tests for the generated code with edge cases.' } },
-      { agentId: 'documenter', action: 'execute', label: 'Generate Docs', inputs: { task: 'Create API documentation and usage examples for the new feature.' } },
-      { agentId: 'devops', action: 'execute', label: 'Create PR', inputs: { task: 'Prepare a pull request with the code, tests, and docs. Include a descriptive PR body.' } },
+      { agentId: 'generator', action: 'execute', label: 'Generate Code', inputs: { context: '', task: 'Generate the implementation for the requested feature following project conventions.' } },
+      { agentId: 'tester', action: 'execute', label: 'Write Tests', inputs: { context: '', task: 'Write comprehensive unit tests for the generated code with edge cases.' } },
+      { agentId: 'documenter', action: 'execute', label: 'Generate Docs', inputs: { context: '', task: 'Create API documentation and usage examples for the new feature.' } },
+      { agentId: 'devops', action: 'execute', label: 'Create PR', inputs: { context: '', task: 'Prepare a pull request with the code, tests, and docs. Include a descriptive PR body.' } },
+    ],
+    briefFields: [
+      { key: 'context', label: 'Feature Description', placeholder: 'Describe the feature to build, its purpose, and any technical constraints…', required: true, type: 'textarea' },
     ],
   },
   {
@@ -71,10 +88,13 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 312,
     lastRun: '30 minutes ago',
     steps: [
-      { agentId: 'debugger', action: 'execute', label: 'Analyze Error', inputs: { task: 'Analyze the stack trace and error logs to identify the root cause of the bug.' } },
-      { agentId: 'generator', action: 'execute', label: 'Generate Fix', inputs: { task: 'Generate a minimal, targeted fix for the identified root cause.' } },
-      { agentId: 'tester', action: 'execute', label: 'Regression Test', inputs: { task: 'Write a regression test that reproduces the original bug and verifies the fix.' } },
-      { agentId: 'reviewer', action: 'execute', label: 'Review Fix', inputs: { task: 'Review the fix for correctness, potential side effects, and code quality.' } },
+      { agentId: 'debugger', action: 'execute', label: 'Analyze Error', inputs: { context: '', task: 'Analyze the stack trace and error logs to identify the root cause of the bug.' } },
+      { agentId: 'generator', action: 'execute', label: 'Generate Fix', inputs: { context: '', task: 'Generate a minimal, targeted fix for the identified root cause.' } },
+      { agentId: 'tester', action: 'execute', label: 'Regression Test', inputs: { context: '', task: 'Write a regression test that reproduces the original bug and verifies the fix.' } },
+      { agentId: 'reviewer', action: 'execute', label: 'Review Fix', inputs: { context: '', task: 'Review the fix for correctness, potential side effects, and code quality.' } },
+    ],
+    briefFields: [
+      { key: 'context', label: 'Bug / Error Description', placeholder: 'Paste the error message, stack trace, or describe the unexpected behaviour…', required: true, type: 'textarea' },
     ],
   },
   {
@@ -137,10 +157,16 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 178,
     lastRun: '1 hour ago',
     steps: [
-      { agentId: 'documenter', action: 'execute', label: 'Welcome Package', inputs: { task: 'Generate a personalized welcome document including company overview, team introductions, first-week schedule, and key contacts.' } },
-      { agentId: 'generator', action: 'execute', label: 'Setup Checklist', inputs: { task: 'Create a comprehensive onboarding checklist: IT equipment, software access, badge, benefits enrollment, and mandatory training modules.' } },
-      { agentId: 'security', action: 'execute', label: 'Access Provisioning', inputs: { task: 'Generate IT access provisioning request: email account, Slack, GitHub, VPN, and role-based system permissions.' } },
-      { agentId: 'reviewer', action: 'execute', label: 'Compliance Check', inputs: { task: 'Verify onboarding package meets labor law requirements, I-9/W-4 documentation, NDA, and IP assignment compliance.' } },
+      { agentId: 'documenter', action: 'execute', label: 'Welcome Package', inputs: { employee_name: '', role: '', department: '', start_date: '', task: 'Generate a personalized welcome document including company overview, team introductions, first-week schedule, and key contacts.' } },
+      { agentId: 'generator', action: 'execute', label: 'Setup Checklist', inputs: { employee_name: '', role: '', department: '', start_date: '', task: 'Create a comprehensive onboarding checklist: IT equipment, software access, badge, benefits enrollment, and mandatory training modules.' } },
+      { agentId: 'security', action: 'execute', label: 'Access Provisioning', inputs: { employee_name: '', role: '', department: '', start_date: '', task: 'Generate IT access provisioning request: email account, Slack, GitHub, VPN, and role-based system permissions.' } },
+      { agentId: 'reviewer', action: 'execute', label: 'Compliance Check', inputs: { employee_name: '', role: '', department: '', start_date: '', task: 'Verify onboarding package meets labor law requirements, I-9/W-4 documentation, NDA, and IP assignment compliance.' } },
+    ],
+    briefFields: [
+      { key: 'employee_name', label: 'Employee Name', placeholder: 'e.g. Jane Smith', required: true },
+      { key: 'role', label: 'Job Title / Role', placeholder: 'e.g. Senior Software Engineer', required: true },
+      { key: 'department', label: 'Department', placeholder: 'e.g. Engineering' },
+      { key: 'start_date', label: 'Start Date', placeholder: 'e.g. Monday July 20' },
     ],
   },
   {
@@ -242,9 +268,14 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 267,
     lastRun: '30 minutes ago',
     steps: [
-      { agentId: 'reviewer', action: 'execute', label: 'Lead Scoring', inputs: { task: 'Score the lead based on ICP fit: company size, industry, tech stack, budget signals, and engagement history.' } },
-      { agentId: 'generator', action: 'execute', label: 'Company Research', inputs: { task: 'Enrich lead data: pull company info, recent news, funding rounds, tech stack, and key decision-makers.' } },
-      { agentId: 'documenter', action: 'execute', label: 'Outreach Draft', inputs: { task: 'Generate a personalized outreach sequence: intro email, follow-up, and LinkedIn message tailored to their pain points.' } },
+      { agentId: 'reviewer', action: 'execute', label: 'Lead Scoring', inputs: { company_name: '', industry: '', pain_points: '', task: 'Score the lead based on ICP fit: company size, industry, tech stack, budget signals, and engagement history.' } },
+      { agentId: 'generator', action: 'execute', label: 'Company Research', inputs: { company_name: '', industry: '', pain_points: '', task: 'Enrich lead data: pull company info, recent news, funding rounds, tech stack, and key decision-makers.' } },
+      { agentId: 'documenter', action: 'execute', label: 'Outreach Draft', inputs: { company_name: '', industry: '', pain_points: '', task: 'Generate a personalized outreach sequence: intro email, follow-up, and LinkedIn message tailored to their pain points.' } },
+    ],
+    briefFields: [
+      { key: 'company_name', label: 'Company / Lead Name', placeholder: 'e.g. Acme Corp', required: true },
+      { key: 'industry', label: 'Industry', placeholder: 'e.g. SaaS, Fintech, Healthcare' },
+      { key: 'pain_points', label: 'Known Pain Points', placeholder: 'e.g. slow onboarding, manual reporting, high churn', type: 'textarea' },
     ],
   },
   {
@@ -283,6 +314,12 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
       { agentId: 'seo_optimizer', action: 'optimize_seo', label: 'SEO Optimization', inputs: { content: '{{editor.output}}', primary_keyword: 'Enter primary keyword...', secondary_keywords: '' } },
       { agentId: 'social_writer', action: 'create_social_posts', label: 'Social Media Posts', inputs: { content: '{{editor.output}}', platforms: 'LinkedIn, X/Twitter, Instagram, Newsletter' } },
     ],
+    briefFields: [
+      { key: 'topic', label: 'Topic / Subject', placeholder: 'e.g. How AI is changing product management', required: true },
+      { key: 'audience', label: 'Target Audience', placeholder: 'e.g. startup founders, mid-level marketers', required: true },
+      { key: 'primary_keyword', label: 'Primary SEO Keyword', placeholder: 'e.g. AI product management' },
+      { key: 'tone', label: 'Writing Tone', type: 'select', placeholder: 'Choose tone', defaultValue: 'friendly', options: ['friendly', 'professional', 'casual', 'authoritative', 'conversational', 'humorous'] },
+    ],
   },
 
   // ── Customer Support ─────────────────────────────────────
@@ -297,9 +334,13 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     runs: 445,
     lastRun: '5 minutes ago',
     steps: [
-      { agentId: 'reviewer', action: 'execute', label: 'Classify & Prioritize', inputs: { task: 'Classify ticket by category (bug, feature request, billing, how-to) and priority (P0-P3) based on content and customer tier.' } },
-      { agentId: 'debugger', action: 'execute', label: 'Root Cause Analysis', inputs: { task: 'For bug reports: analyze error details, reproduce steps, and identify likely root cause from known issues database.' } },
-      { agentId: 'generator', action: 'execute', label: 'Response Draft', inputs: { task: 'Draft a helpful, empathetic response with solution steps, workarounds, or clear escalation path for the customer.' } },
+      { agentId: 'reviewer', action: 'execute', label: 'Classify & Prioritize', inputs: { ticket_content: '', customer_tier: '', task: 'Classify ticket by category (bug, feature request, billing, how-to) and priority (P0-P3) based on content and customer tier.' } },
+      { agentId: 'debugger', action: 'execute', label: 'Root Cause Analysis', inputs: { ticket_content: '', customer_tier: '', task: 'For bug reports: analyze error details, reproduce steps, and identify likely root cause from known issues database.' } },
+      { agentId: 'generator', action: 'execute', label: 'Response Draft', inputs: { ticket_content: '', customer_tier: '', task: 'Draft a helpful, empathetic response with solution steps, workarounds, or clear escalation path for the customer.' } },
+    ],
+    briefFields: [
+      { key: 'ticket_content', label: 'Ticket / Message Content', placeholder: 'Paste the customer message or ticket description here…', required: true, type: 'textarea' },
+      { key: 'customer_tier', label: 'Customer Tier', type: 'select', placeholder: 'Choose tier', options: ['Free', 'Starter', 'Pro', 'Enterprise'] },
     ],
   },
 
@@ -353,11 +394,19 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
     lastRun: 'New',
     steps: [
       { agentId: 'trend_scout', action: 'discover_trends', label: 'Trend Discovery', inputs: { niche: 'Enter your niche...', persona: 'Enter target persona...', timeframe: 'last 24h' } },
-      { agentId: 'hook_generator', action: 'generate_hooks', label: 'Generate Viral Hooks', inputs: { trend: '{{trend_scout.output}}', persona: 'Enter target persona...' } },
-      { agentId: 'reel_scripter', action: 'write_reel_script', label: 'Reel Script', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}' } },
-      { agentId: 'carousel_writer', action: 'write_carousel', label: 'Carousel Content', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}', platform: 'Instagram, LinkedIn' } },
-      { agentId: 'viral_scorer', action: 'score_content', label: 'Viral Score', inputs: { content: '{{reel_scripter.output}}\n\n---\n\n{{carousel_writer.output}}', platform: 'Instagram', persona: 'Enter target persona...' } },
-      { agentId: 'platform_adapter', action: 'adapt_content', label: 'Platform Adaptation', inputs: { content: '{{viral_scorer.output}}\n\nOriginal Reel:\n{{reel_scripter.output}}\n\nOriginal Carousel:\n{{carousel_writer.output}}', platforms: 'X, Instagram, LinkedIn, Facebook' } },
+      { agentId: 'audience_persona', action: 'build_persona', label: 'Audience Persona', inputs: { persona: 'Enter target persona...', niche: 'Enter your niche...', trend_context: '{{trend_scout.output}}' } },
+      { agentId: 'hook_generator', action: 'generate_hooks', label: 'Generate Viral Hooks', inputs: { trend: '{{trend_scout.output}}', persona_profile: '{{audience_persona.output}}' } },
+      { agentId: 'reel_scripter', action: 'write_reel_script', label: 'Reel Script', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}', persona_profile: '{{audience_persona.output}}' } },
+      { agentId: 'carousel_writer', action: 'write_carousel', label: 'Carousel Content', inputs: { hook: '{{hook_generator.output}}', topic: '{{trend_scout.output}}', platform: 'Instagram, LinkedIn', persona_profile: '{{audience_persona.output}}' } },
+      { agentId: 'viral_scorer', action: 'score_content', label: 'Viral Score', inputs: { content: '{{reel_scripter.output}}\n\n---\n\n{{carousel_writer.output}}', platform: 'Instagram', persona_profile: '{{audience_persona.output}}' } },
+      { agentId: 'angle_rotator', action: 'rotate_angle', label: 'Big Pivot / Angle Rotator', inputs: { viral_score_output: '{{viral_scorer.output}}', reel_content: '{{reel_scripter.output}}', carousel_content: '{{carousel_writer.output}}', hooks: '{{hook_generator.output}}', persona_profile: '{{audience_persona.output}}' } },
+      { agentId: 'platform_adapter', action: 'adapt_content', label: 'Platform Adaptation', inputs: { content: '{{angle_rotator.output}}\n\n---\n\nOriginal Reel:\n{{reel_scripter.output}}\n\nOriginal Carousel:\n{{carousel_writer.output}}', platforms: 'X, Instagram, LinkedIn, Facebook' } },
+    ],
+    briefFields: [
+      { key: 'niche', label: 'Your Niche', placeholder: 'e.g. AI tools for developers, personal finance, fitness', required: true },
+      { key: 'persona', label: 'Target Persona', placeholder: 'e.g. startup founders aged 25-40, interested in productivity', required: true },
+      { key: 'timeframe', label: 'Trend Timeframe', type: 'select', placeholder: 'Select timeframe', defaultValue: 'last 24h', options: ['last 24h', 'last 48h', 'last 7 days', 'last 30 days'] },
+      { key: 'platform', label: 'Primary Platform', type: 'select', placeholder: 'Select platform', options: ['Instagram', 'LinkedIn', 'X/Twitter', 'TikTok', 'YouTube Shorts', 'All platforms'] },
     ],
   },
 ]

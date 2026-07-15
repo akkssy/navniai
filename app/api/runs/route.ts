@@ -78,6 +78,25 @@ export async function GET(request: NextRequest) {
     const userId = (session?.user as { id?: string })?.id || null
 
     const { searchParams } = new URL(request.url)
+
+    // ?counts=true → return per-template run counts (used by dashboard template cards)
+    if (searchParams.get('counts') === 'true') {
+      const where = userId ? { userId } : {}
+      const rows = await prisma.workflowRun.groupBy({
+        by: ['pipelineType'],
+        where,
+        _count: { id: true },
+        _max: { startedAt: true },
+      })
+      const counts: Record<string, { count: number; lastRunAt: string | null }> = {}
+      for (const row of rows) {
+        counts[row.pipelineType] = {
+          count: row._count.id,
+          lastRunAt: row._max.startedAt ? row._max.startedAt.toISOString() : null,
+        }
+      }
+      return NextResponse.json({ ok: true, counts })
+    }
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const pipelineType = searchParams.get('type') || undefined
 

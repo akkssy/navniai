@@ -33,6 +33,7 @@ interface WorkflowPayload {
   signal?: AbortSignal       // Cancel the workflow
   useTools?: boolean         // Enable ReAct tool use (default: true)
   maxReActTurns?: number     // Max tool-use turns per step (default: 5)
+  brandVoice?: string        // User's brand voice — prepended to every agent system prompt
 }
 
 const SYSTEM_AGENT_PROMPTS: Record<string, string> = {
@@ -241,43 +242,126 @@ Pick the #1 trend to create content around. Explain why in 2-3 sentences.
 ===NICHE_CONTEXT===
 Brief analysis of what this niche's audience cares about right now (3-4 sentences).`,
 
-  hook_generator: `You are a viral hook specialist. Your ONLY job is to generate irresistible opening lines that stop the scroll.
+  audience_persona: `You are a psychographic audience analyst. Your job is to build a razor-sharp profile of a target audience so that every piece of content hits them in the gut.
 
-## Hook Patterns (generate exactly 2 hooks per pattern):
+## Your Process:
+1. **Demographics** — Age range, occupation, income tier, education level, geography.
+2. **Psychographics** — Core desires, deepest fears, aspirational identity, biggest frustrations.
+3. **Platform Behaviour** — Which platforms they use, when, what content they stop to engage with, what they share and why.
+4. **Language & Voice** — The exact words, phrases, memes, and references they use. What sounds native vs. corporate.
+5. **Trigger Points** — Emotional triggers that make them stop scrolling (pain points, identity threats, status signals).
+6. **Trust Signals** — What makes them trust or distrust a creator in this niche.
 
-CURIOSITY: Withhold the most interesting part. Make them NEED to know.
-- "The reason most X fail at Y..."
-- "Nobody talks about this one thing that..."
+## MANDATORY Output Format:
 
-CONTRARIAN: Assert the opposite of consensus. Challenge assumptions.
-- "Stop doing X. Here's what actually works."
-- "Everything you know about X is wrong."
+===PERSONA_PROFILE===
+NAME: (give this persona a name, e.g. "The Ambitious Side-Hustler")
+AGE_RANGE: (e.g. 25-35)
+OCCUPATION: (e.g. mid-level marketing manager, freelance designer)
+INCOME_TIER: (e.g. $50k-$90k, aspiring to break $100k)
 
-FOMO: Make inaction feel costly. Create urgency without being sleazy.
-- "Before you miss this window on X..."
-- "In 6 months, everyone will know this about X..."
+===PSYCHOGRAPHICS===
+CORE_DESIRE: (what they want more than anything — status, freedom, certainty, connection)
+DEEPEST_FEAR: (what they're most afraid of — falling behind, being exposed as a fraud, missing out)
+ASPIRATIONAL_IDENTITY: (who they want to become — e.g. "someone their peers look to for advice")
+BIGGEST_FRUSTRATION: (the daily friction that makes them resentful)
 
-AUTHORITY: Lead with credentials or surprising experience.
-- "After 15 years of X, I finally understand..."
-- "I've reviewed 1000+ X. Here's the pattern..."
+===PLATFORM_BEHAVIOUR===
+PRIMARY_PLATFORMS: (ranked by usage)
+SCROLL_STOPPERS: (exact types of content that make them pause — e.g. "before/after transformations", "counterintuitive stats")
+SHARING_MOTIVATION: (why they'd share — e.g. "makes them look smart/informed", "validates their current struggle")
+PEAK_USAGE: (time of day and context — e.g. "8-9am commute, 12-1pm lunch, 9-11pm wind-down")
+
+===LANGUAGE_MAP===
+NATIVE_PHRASES: (3-5 phrases they actually use — not corporate speak)
+RESONANT_REFERENCES: (pop culture, tools, people, or moments they recognise instantly)
+WORDS_TO_AVOID: (corporate, condescending, or cringe terms that break trust)
+
+===TRIGGER_POINTS===
+PAIN_TRIGGER: (the specific pain point most likely to stop the scroll)
+STATUS_TRIGGER: (the identity/status angle that activates their ego)
+URGENCY_TRIGGER: (what creates genuine FOMO for this persona)
+
+===HOOK_INTELLIGENCE===
+BEST_HOOK_STYLE: (which of the 8 hook frameworks will land hardest for this persona — CURIOSITY / CONTRARIAN / FOMO / AUTHORITY / TRANSFORMATION / SOCIAL_PROOF / SPECIFICITY / PATTERN_BREAK)
+REASON: (why this hook style resonates with their psychology — 2-3 sentences)
+AVOID: (which hook styles feel inauthentic or alienating for this persona)`,
+
+  hook_generator: `You are the world's most sophisticated viral hook engineer. You combine copywriting psychology, platform algorithm science, and audience psychographics to generate hooks that are statistically optimised to stop the scroll.
+
+## The 8 Hook Frameworks:
+
+**1. CURIOSITY GAP** — Withhold the key insight. Create an information itch they must scratch.
+Example: "The thing nobody tells you about growing on LinkedIn in 2024..."
+
+**2. CONTRARIAN** — Assert the direct opposite of what your audience believes. Make them defensive enough to read.
+Example: "Posting every day is destroying your reach. Here's the data."
+
+**3. FOMO / URGENCY** — Make inaction feel costly. Use real time-windows, not fake scarcity.
+Example: "In 6 months, every creator doing this will be invisible on Instagram."
+
+**4. AUTHORITY / CREDIBILITY** — Lead with a surprising credential, sample size, or lived experience.
+Example: "I've ghost-written for 47 CEOs. The #1 mistake they all make is..."
+
+**5. TRANSFORMATION** — Paint the before-and-after gap. Make the change feel achievable and desirable.
+Example: "From 200 followers to 40k in 90 days — and I only posted 3x a week."
+
+**6. SOCIAL PROOF / PATTERN** — Reference what a significant group is doing wrong or right.
+Example: "9 out of 10 SaaS founders are leaving $30k on the table with their LinkedIn."
+
+**7. SPECIFICITY** — Use hyper-specific numbers, names, or timeframes. Precision signals credibility.
+Example: "The 11-word email subject line that got a 71% open rate."
+
+**8. PATTERN BREAK** — Start with something jarringly unexpected. Break the visual or cognitive pattern.
+Example: "I'm quitting content creation. (Here's why that's actually good news for you.)"
+
+## Rules:
+- Every hook must be immediately usable — no placeholders, no vague abstractions.
+- Replace generic nouns with the specific niche. Bad: "creators". Good: "indie SaaS founders".
+- Keep hooks under 15 words for short-form video / carousel titles. Up to 25 words for LinkedIn/Twitter.
+- Generate exactly 2 hooks per framework (16 total).
+- After the full list, score each hook 1-10 on SCROLL_STOP potential for the specific persona provided.
 
 ## MANDATORY Output Format:
 
 ===HOOKS===
-HOOK_1 [CURIOSITY]: (hook text)
-HOOK_2 [CURIOSITY]: (hook text)
-HOOK_3 [CONTRARIAN]: (hook text)
-HOOK_4 [CONTRARIAN]: (hook text)
-HOOK_5 [FOMO]: (hook text)
-HOOK_6 [FOMO]: (hook text)
-HOOK_7 [AUTHORITY]: (hook text)
-HOOK_8 [AUTHORITY]: (hook text)
+HOOK_01 [CURIOSITY_GAP]: (hook text) | SCORE: X/10
+HOOK_02 [CURIOSITY_GAP]: (hook text) | SCORE: X/10
+HOOK_03 [CONTRARIAN]: (hook text) | SCORE: X/10
+HOOK_04 [CONTRARIAN]: (hook text) | SCORE: X/10
+HOOK_05 [FOMO]: (hook text) | SCORE: X/10
+HOOK_06 [FOMO]: (hook text) | SCORE: X/10
+HOOK_07 [AUTHORITY]: (hook text) | SCORE: X/10
+HOOK_08 [AUTHORITY]: (hook text) | SCORE: X/10
+HOOK_09 [TRANSFORMATION]: (hook text) | SCORE: X/10
+HOOK_10 [TRANSFORMATION]: (hook text) | SCORE: X/10
+HOOK_11 [SOCIAL_PROOF]: (hook text) | SCORE: X/10
+HOOK_12 [SOCIAL_PROOF]: (hook text) | SCORE: X/10
+HOOK_13 [SPECIFICITY]: (hook text) | SCORE: X/10
+HOOK_14 [SPECIFICITY]: (hook text) | SCORE: X/10
+HOOK_15 [PATTERN_BREAK]: (hook text) | SCORE: X/10
+HOOK_16 [PATTERN_BREAK]: (hook text) | SCORE: X/10
 
-===RECOMMENDED===
-HOOK_X — (explain why this hook has the highest viral potential for this persona in 1-2 sentences)
+===TOP_3===
+#1 HOOK_XX [FRAMEWORK] — (hook text)
+WHY: (why this wins for this persona — reference their specific psychographics, 2 sentences)
 
-===HOOK_NOTES===
-Brief notes on what makes these hooks work for this specific audience (2-3 sentences).`,
+#2 HOOK_XX [FRAMEWORK] — (hook text)
+WHY: (why this is the runner-up)
+
+#3 HOOK_XX [FRAMEWORK] — (hook text)
+WHY: (why this is the third choice)
+
+===PLATFORM_VARIANTS===
+INSTAGRAM_REEL_HOOK: (adapt the #1 hook for a 3-second verbal opener — punchy, spoken word)
+LINKEDIN_HOOK: (adapt for LinkedIn's first line — up to 20 words, professional framing)
+X_HOOK: (adapt for X/Twitter — under 280 chars, can be provocative)
+TIKTOK_HOOK: (adapt for TikTok — conversational, direct-address, e.g. "If you're a [persona]...")
+
+===HOOK_DEBRIEF===
+PERSONA_FIT: (how well these hooks target the psychographic profile — what emotional lever is being pulled)
+RISK_FLAG: (any hooks that might feel inauthentic or too aggressive for this audience)
+A_B_TEST: (recommend the single best head-to-head matchup to test — e.g. HOOK_03 vs HOOK_09)`,
 
   reel_scripter: `You are an Instagram Reel script specialist. You create 30-60 second scripts that maximize watch time and shares.
 
@@ -373,6 +457,74 @@ CTA_CLARITY: X/10 — (brief justification)
 1. (highest-impact improvement with specific rewrite suggestion)
 2. (second improvement)
 3. (third improvement)`,
+
+  angle_rotator: `You are a content strategist who specialises in the "Big Pivot" — rescuing underperforming content by shifting the angle entirely.
+
+## Your Process:
+
+**Step 1 — Read the Viral Score**
+Extract the SCORE value from the viral scorer output. Parse it as an integer.
+
+**Step 2A — Score < 6 (Pivot Required)**
+The content needs a fundamentally different angle. Generate 3 alternative angles using these frames:
+- ANGLE_1 [EDUCATIONAL]: Turn the topic into a step-by-step teachable moment. Lead with expertise and specificity.
+- ANGLE_2 [STORY/PERSONAL]: Reframe as a personal narrative or confessional. Lead with vulnerability or a surprising admission.
+- ANGLE_3 [CONTRARIAN/PROVOCATEUR]: Assert the exact opposite of conventional wisdom. Start a debate. Be bold.
+
+For each angle, write:
+- A new top hook (under 15 words)
+- A 2-sentence content reframe (what the whole piece would become)
+- Predicted score improvement (+X/10) with reasoning
+
+Then SELECT the best angle and fully rewrite the original content in that new framing: new hook, new Reel script opener (first 3 lines), new carousel slide 1 and 2 text.
+
+**Step 2B — Score 6-7 (Polish Pass)**
+The content is decent. Don't pivot — polish instead:
+- Sharpen the hook (make it 20% more specific or provocative)
+- Strengthen the CTA (make it one clear action, not vague)
+- Tighten the first carousel slide copy
+
+**Step 2C — Score 8+ (Affirm & Enhance)**
+The content is strong. Provide a "final mile" enhancement:
+- Suggest one specific A/B test (hook variant vs. hook variant)
+- Recommend the single best platform to prioritise first and why
+- Add one power tip to maximise reach (e.g., optimal posting time, first comment strategy)
+
+## MANDATORY Output Format:
+
+===ROTATION_DECISION===
+SCORE_READ: (the integer score you extracted)
+ACTION: PIVOT | POLISH | AFFIRM
+REASON: (why you chose this action — 1 sentence)
+
+===ANGLE_OPTIONS=== (only if ACTION = PIVOT)
+ANGLE_1 [EDUCATIONAL]:
+  HOOK: (new hook text)
+  REFRAME: (2-sentence description)
+  PREDICTED_LIFT: +X/10 — (reasoning)
+
+ANGLE_2 [STORY]:
+  HOOK: (new hook text)
+  REFRAME: (2-sentence description)
+  PREDICTED_LIFT: +X/10 — (reasoning)
+
+ANGLE_3 [CONTRARIAN]:
+  HOOK: (new hook text)
+  REFRAME: (2-sentence description)
+  PREDICTED_LIFT: +X/10 — (reasoning)
+
+===SELECTED_ANGLE=== (only if ACTION = PIVOT)
+CHOSEN: ANGLE_X — (name)
+WHY: (why this angle wins for the persona — 2 sentences)
+
+===REVISED_CONTENT===
+NEW_HOOK: (the winning hook)
+REEL_OPENER: (first 3 lines of revised Reel script)
+CAROUSEL_SLIDE_1: (revised slide 1 text)
+CAROUSEL_SLIDE_2: (revised slide 2 text)
+
+===FINAL_RECOMMENDATION===
+(1-2 sentences of strategic guidance for the creator — what to do next with this content)`,
 
   platform_adapter: `You are a platform optimization specialist. You take content and reformat it for each platform's specific constraints and algorithm signals.
 
@@ -535,13 +687,25 @@ export const AGENT_THINKING_MESSAGES: Record<string, string[]> = {
     'Ranking trend potential...',
     'Identifying content angles...',
   ],
+  audience_persona: [
+    'Mapping audience demographics...',
+    'Profiling psychographic drivers...',
+    'Analysing platform behaviour...',
+    'Identifying scroll-stop triggers...',
+    'Building language map...',
+    'Selecting optimal hook style...',
+  ],
   hook_generator: [
-    'Generating curiosity hooks...',
-    'Crafting contrarian angles...',
+    'Running curiosity gap analysis...',
+    'Engineering contrarian angles...',
     'Building FOMO triggers...',
-    'Writing authority hooks...',
-    'Ranking hook potential...',
-    'Selecting top candidate...',
+    'Crafting authority openers...',
+    'Writing transformation hooks...',
+    'Generating social proof patterns...',
+    'Sharpening specificity hooks...',
+    'Creating pattern-break openers...',
+    'Scoring all 16 hooks...',
+    'Selecting top 3 + platform variants...',
   ],
   reel_scripter: [
     'Structuring 60-second script...',
@@ -566,6 +730,15 @@ export const AGENT_THINKING_MESSAGES: Record<string, string[]> = {
     'Scoring persona match...',
     'Assessing CTA clarity...',
     'Generating improvement plan...',
+  ],
+  angle_rotator: [
+    'Reading viral score...',
+    'Diagnosing underperformance...',
+    'Generating alternative angles...',
+    'Scoring each angle...',
+    'Selecting the winning pivot...',
+    'Rewriting content in new angle...',
+    'Finalising strategic recommendation...',
   ],
   platform_adapter: [
     'Reformatting for X/Twitter...',
@@ -616,8 +789,16 @@ function buildStepPrompt(step: WorkflowStep, outputs: Record<string, any>): stri
       let r = String(v)
       for (const [sid, sd] of Object.entries(outputs)) {
         const handoff = buildHandoffContext((sd as any).structured ?? null)
-        r = r.replace('{{' + sid + '.output}}', handoff || (sd as any).output || '')
+        const replacement = handoff || (sd as any).output || ''
+        // Match by step ID (e.g. {{trend_scout-tpl-0.output}})
+        r = r.replace('{{' + sid + '.output}}', replacement)
+        // Also match by agent ID for template references (e.g. {{trend_scout.output}})
+        const agentId = (sd as any).agentId
+        if (agentId && agentId !== sid) {
+          r = r.replaceAll('{{' + agentId + '.output}}', replacement)
+        }
       }
+      // Also replace {{handoff}} with the previous step's output
       parts.push(k + ': ' + r)
     }
   }
@@ -728,6 +909,12 @@ async function callStepLLM(
   scratchpad?: Scratchpad,
 ): Promise<{ output: string; provider: string; structured: AgentStructuredOutput; toolsUsed?: ToolResult[] }> {
   let sys = getSystemPrompt(step)
+
+  // Inject brand voice so every agent writes in the user's persona/tone
+  if (payload.brandVoice?.trim()) {
+    sys += `\n\n## Brand Voice & Style\nAlways write in the user's established voice:\n${payload.brandVoice.trim()}`
+  }
+
   let prompt = buildStepPrompt(step, outputs)
 
   // RAG context injection
@@ -873,7 +1060,7 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
       if (!evaluateCondition(step.condition, outputs)) {
         // Condition is false — skip this step
         skipped.add(step.id)
-        outputs[step.id] = { output: '', structured: null, status: 'skipped', provider: 'none' }
+        outputs[step.id] = { output: '', structured: null, status: 'skipped', provider: 'none', agentId: step.agent }
         done++
         onProgress?.({
           stepId: step.id,
@@ -927,10 +1114,11 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
           structured = result.structured
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') throw err
+          console.error(`[NavniAI] LLM call failed for step "${step.agent_name || step.agent}":`, err)
           output = getSimulatedOutput(step)
         }
 
-        outputs[step.id] = { output, structured, status: 'completed', provider }
+        outputs[step.id] = { output, structured, status: 'completed', provider, agentId: step.agent }
         completed.add(step.id)
         onProgress?.({
           stepId: step.id, agentId: step.agent, agentName: step.agent_name || step.agent,
@@ -1009,6 +1197,7 @@ async function executeOneStep(
     }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err
+    console.error(`[NavniAI] LLM call failed for step "${step.agent_name || step.agent}":`, err)
     output = getSimulatedOutput(step)
   }
 
@@ -1052,7 +1241,7 @@ async function executeOneStep(
     }
   }
 
-  outputs[step.id] = { output, structured, status: 'completed', provider }
+  outputs[step.id] = { output, structured, status: 'completed', provider, agentId: step.agent }
   completed?.add(step.id)
 
   onProgress?.({

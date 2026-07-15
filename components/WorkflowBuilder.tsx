@@ -79,9 +79,23 @@ function useElapsedTime(isRunning: boolean) {
   return elapsed
 }
 
-export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?: string; runId?: string; workflowId?: string } = {}) {
+// ─── Apply brief-form values to template step inputs ───
+function applyBriefValues(
+  inputs: Record<string, string>,
+  briefValues: Record<string, string>,
+): Record<string, string> {
+  const result = { ...inputs }
+  for (const [key, value] of Object.entries(briefValues)) {
+    if (value && key in result) result[key] = value
+  }
+  return result
+}
+
+export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {} }: { templateId?: string; runId?: string; workflowId?: string; briefValues?: Record<string, string> } = {}) {
   const { data: session } = useSession()
   const template = templateId ? getTemplateById(templateId) : null
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -89,6 +103,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
   const [runResult, setRunResult] = useState<{ status: string; message: string } | null>(null)
   const [executionOutputs, setExecutionOutputs] = useState<Record<string, { output: string; status: string; provider?: string }> | null>(null)
   const [showOutputPanel, setShowOutputPanel] = useState(false)
+  const [copiedExport, setCopiedExport] = useState(false)
 
   const [pipelineProgress, setPipelineProgress] = useState<StepProgress[]>([])
   const [streamingText, setStreamingText] = useState<Record<string, string>>({}) // agentId → live text
@@ -200,7 +215,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
         data: {
           agent,
           action: step.action,
-          inputs: step.inputs,
+          inputs: applyBriefValues(step.inputs, briefValues),
           condition: '',
         },
       }
@@ -478,6 +493,9 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     setCheckpointRequest(null)
     checkpointResolverRef.current = null
 
+    // Reset all node statuses to 'pending' so the canvas shows a clean slate
+    setNodes(prev => prev.map(n => ({ ...n, data: { ...n.data, status: 'pending', thinkingMessage: undefined } })))
+
     // Build progress entries from current nodes so the pipeline tracker renders
     const workflow = buildWorkflowPayload()
     setPipelineProgress(workflow.steps.map((step, i) => ({
@@ -494,6 +512,12 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
         p.stepId === progress.stepId
           ? { ...p, ...progress }
           : p
+      ))
+      // Mirror status + thinking message onto the node so AgentNode renders live state
+      setNodes(prev => prev.map(n =>
+        n.id === progress.stepId
+          ? { ...n, data: { ...n.data, status: progress.status, thinkingMessage: progress.thinkingMessage } }
+          : n
       ))
     }
 
@@ -518,7 +542,13 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     }
 
     try {
-      const payload = { workflow, inputs: {}, user_id: 'web-user', signal: abortController.signal }
+      const payload = {
+        workflow,
+        inputs: {},
+        user_id: 'web-user',
+        signal: abortController.signal,
+        brandVoice: loadSettings().brandVoice || '',
+      }
 
       // Always run client-side — enables live streaming, HITL, and uses the
       // user's localStorage API keys (server route can't access those)
@@ -565,6 +595,10 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
     } finally {
       setIsRunning(false)
       abortControllerRef.current = null
+      // Keep completed/failed statuses visible for 4 s then fade nodes back to normal
+      setTimeout(() => {
+        setNodes(prev => prev.map(n => ({ ...n, data: { ...n.data, status: undefined, thinkingMessage: undefined } })))
+      }, 4000)
     }
   }
 
@@ -647,9 +681,8 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
 
               {/* Toolbar */}
               <div className="absolute top-4 right-4 flex gap-2 items-center">
-                {(() => {
-                  const s = typeof window !== 'undefined' ? loadSettings() : null
-                  if (!s) return null
+                {mounted && (() => {
+                  const s = loadSettings()
                   const key = s.activeProvider as LLMProviderKey
                   const p = PROVIDER_REGISTRY[key]
                   if (!p) return null
@@ -937,10 +970,51 @@ export function WorkflowBuilder({ templateId, runId, workflowId }: { templateId?
                       {Object.keys(executionOutputs).length} step(s)
                     </span>
                   </h3>
-                  <button onClick={() => setShowOutputPanel(false)}
-                    className="text-ink-400 hover:text-ink-700 text-xs px-2 py-1 rounded-md hover:bg-surface-100 transition">
-                    ✕ Close
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Copy all output */}
+                    <button
+                      onClick={() => {
+                        const md = Object.entries(executionOutputs).map(([stepId, r]) => {
+                          const node = nodes.find(n => n.id === stepId)
+                          const name = node?.data?.agent?.name || stepId
+                          const icon = node?.data?.agent?.icon || '⚙️'
+                          return `## ${icon} ${name}\n\n${r.output}`
+                        }).join('\n\n---\n\n')
+                        navigator.clipboard.writeText(md).then(() => {
+                          setCopiedExport(true)
+                          setTimeout(() => setCopiedExport(false), 2000)
+                        })
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-md border border-surface-300 text-ink-500 hover:bg-surface-100 transition flex items-center gap-1"
+                    >
+                      {copiedExport ? '✅ Copied!' : '📋 Copy All'}
+                    </button>
+                    {/* Download as markdown */}
+                    <button
+                      onClick={() => {
+                        const md = Object.entries(executionOutputs).map(([stepId, r]) => {
+                          const node = nodes.find(n => n.id === stepId)
+                          const name = node?.data?.agent?.name || stepId
+                          const icon = node?.data?.agent?.icon || '⚙️'
+                          return `## ${icon} ${name}\n\n${r.output}`
+                        }).join('\n\n---\n\n')
+                        const blob = new Blob([`# Pipeline Output\n\n${md}`], { type: 'text/markdown' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `pipeline-output-${new Date().toISOString().slice(0, 10)}.md`
+                        a.click()
+                        URL.revokeObjectURL(url)
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-md border border-surface-300 text-ink-500 hover:bg-surface-100 transition flex items-center gap-1"
+                    >
+                      ⬇️ Download .md
+                    </button>
+                    <button onClick={() => setShowOutputPanel(false)}
+                      className="text-ink-400 hover:text-ink-700 text-xs px-2 py-1 rounded-md hover:bg-surface-100 transition">
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {Object.entries(executionOutputs).map(([stepId, stepResult]) => {

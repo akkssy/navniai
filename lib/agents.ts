@@ -42,10 +42,12 @@ export const MARKETING_AGENTS: Agent[] = [
 // Viral Social Media agents (purpose-built for viral content pipelines)
 export const VIRAL_SOCIAL_AGENTS: Agent[] = [
   { id: 'trend_scout', name: 'Trend Scout', icon: '📈', color: '#f97316', description: 'Discover high-velocity viral trends across niches using web search', category: 'system' },
-  { id: 'hook_generator', name: 'Hook Generator', icon: '🪝', color: '#ef4444', description: 'Generate 8 viral hook variants (curiosity, contrarian, FOMO, authority)', category: 'system' },
+  { id: 'audience_persona', name: 'Audience Persona', icon: '🎯', color: '#6366f1', description: 'Build a deep psychographic profile of the target audience to sharpen hook targeting', category: 'system' },
+  { id: 'hook_generator', name: 'Hook Generator', icon: '🪝', color: '#ef4444', description: 'Generate 16 viral hook variants across 8 proven frameworks with platform-specific variants and engagement scoring', category: 'system' },
   { id: 'reel_scripter', name: 'Reel Scripter', icon: '🎬', color: '#a855f7', description: 'Create Instagram Reel scripts with hook-loop-value-CTA structure', category: 'system' },
   { id: 'carousel_writer', name: 'Carousel Writer', icon: '🎠', color: '#06b6d4', description: 'Generate slide-by-slide carousel content for Instagram & LinkedIn', category: 'system' },
   { id: 'viral_scorer', name: 'Viral Scorer', icon: '⚡', color: '#eab308', description: 'Score content on hook strength, shareability, platform fit & CTA clarity', category: 'system' },
+  { id: 'angle_rotator', name: 'Angle Rotator', icon: '🔄', color: '#ec4899', description: 'When viral score is low, proposes 3 alternative angles and rewrites content from the strongest one', category: 'system' },
   { id: 'platform_adapter', name: 'Platform Adapter', icon: '🔧', color: '#10b981', description: 'Reformat content for platform-specific constraints & algorithm signals', category: 'system' },
 ]
 

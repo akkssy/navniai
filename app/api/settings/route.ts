@@ -17,6 +17,7 @@ export async function GET() {
       activeProvider: row.activeProvider,
       fallbackChain: row.fallbackChain.split(',').filter(Boolean),
       providers: JSON.parse(row.providersJson || '{}'),
+      brandVoice: row.brandVoice || '',
     },
   })
 }
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   const userId = (session?.user as { id?: string })?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { activeProvider, fallbackChain, providers } = await request.json()
+  const { activeProvider, fallbackChain, providers, brandVoice } = await request.json()
 
   await prisma.lLMSettings.upsert({
     where: { userId },
@@ -35,11 +36,13 @@ export async function POST(request: NextRequest) {
       activeProvider: activeProvider || 'ollama',
       fallbackChain: Array.isArray(fallbackChain) ? fallbackChain.join(',') : fallbackChain || '',
       providersJson: JSON.stringify(providers || {}),
+      brandVoice: brandVoice || '',
     },
     update: {
       activeProvider: activeProvider || 'ollama',
       fallbackChain: Array.isArray(fallbackChain) ? fallbackChain.join(',') : fallbackChain || '',
       providersJson: JSON.stringify(providers || {}),
+      brandVoice: brandVoice || '',
     },
   })
 
