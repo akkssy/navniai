@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.0",
@@ -41,8 +42,12 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^30.0.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "prisma": "^5.22.0"
+    "jest": "^30.4.2",
+    "jest-environment-node": "^30.4.1",
+    "prisma": "^5.22.0",
+    "ts-jest": "^29.4.11"
   }
 }
