@@ -24,7 +24,7 @@ function useCounter(target: number, duration = 2000) {
 export default function Home() {
   const agents = useCounter(18, 1500)
   const providers = useCounter(6, 1200)
-  const domains = useCounter(10, 1400)
+  const hooks = useCounter(16, 1400)
 
   return (
     <div className="min-h-screen">
@@ -72,27 +72,37 @@ export default function Home() {
             {/* Left — Hero Text */}
             <div className="animate-fade-in">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-accent-50/80 dark:bg-accent-50/40 text-accent-600 dark:text-accent-400 text-xs font-semibold rounded-full mb-8 border border-accent-200/50 dark:border-accent-200/20 backdrop-blur-sm">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-orange-50/80 dark:bg-orange-50/20 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-full mb-8 border border-orange-200/50 dark:border-orange-200/20 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
                 </span>
-                Visual AI Agent Orchestration
+                🔥 AI Content Pipeline Studio
               </div>
 
               <h1 className="heading-serif text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.08] mb-7 text-ink-700">
-                Build AI that<br />
-                <span className="gradient-text">thinks together.</span>
+                Turn any topic into<br />
+                <span className="gradient-text">viral content.</span>
               </h1>
 
-              <p className="text-lg sm:text-xl text-ink-400 mb-10 leading-relaxed max-w-xl animate-slide-up-delay">
-                Drag, connect, and orchestrate multi-agent pipelines — from code review to legal compliance —
-                with real-time streaming and human-in-the-loop checkpoints.
+              <p className="text-lg sm:text-xl text-ink-400 mb-6 leading-relaxed max-w-xl animate-slide-up-delay">
+                Trend Scout → Audience Persona → 16 Hook Variants → Reel Script → Viral Score → Angle Rotator.
+                Our AI scores and rescues your content <em>before</em> you publish.
               </p>
 
+              {/* Pipeline flow badge */}
+              <div className="flex flex-wrap gap-2 mb-8 animate-slide-up-delay">
+                {['Trend Scout', 'Persona', '16 Hooks', 'Reel Script', 'Viral Score', 'Big Pivot'].map((step, i) => (
+                  <span key={step} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-surface-100 border border-surface-300 text-ink-500 font-medium">
+                    {i > 0 && <span className="text-ink-300 -ml-1 mr-0.5">→</span>}
+                    {step}
+                  </span>
+                ))}
+              </div>
+
               <div className="flex flex-wrap gap-4 animate-slide-up-delay-2">
-                <Link href="/workflow/builder" className="btn-hero text-base px-8 py-3.5 flex items-center gap-2.5">
-                  Start Building Free
+                <Link href="/workflow/builder?template=viral-social" className="btn-hero text-base px-8 py-3.5 flex items-center gap-2.5">
+                  Try Viral Pipeline Free
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>
                 <Link href="/dashboard" className="btn-secondary text-base px-8 py-3.5 flex items-center gap-2">
@@ -109,7 +119,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-ink-400">
                   <CheckBadgeIcon className="h-4 w-4 text-emerald-500" />
-                  Works offline with Ollama
+                  Works with Ollama, Gemini, OpenAI
                 </div>
               </div>
             </div>
@@ -128,8 +138,8 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <StatItem value={agents} suffix="+" label="Pre-built Agents" icon={<CpuChipIcon className="h-5 w-5" />} />
             <StatItem value={providers} label="LLM Providers" icon={<BoltIcon className="h-5 w-5" />} />
-            <StatItem value={domains} suffix="+" label="Domain Templates" icon={<PuzzlePieceIcon className="h-5 w-5" />} />
-            <StatItem value={100} suffix="%" label="Open & Extensible" icon={<CommandLineIcon className="h-5 w-5" />} />
+            <StatItem value={hooks} label="Hook Frameworks" icon={<PuzzlePieceIcon className="h-5 w-5" />} />
+            <StatItem value={100} suffix="%" label="BYO Model — Free" icon={<CommandLineIcon className="h-5 w-5" />} />
           </div>
         </div>
       </section>
@@ -139,10 +149,10 @@ export default function Home() {
         <div className="text-center mb-16">
           <p className="section-label mb-3">Why NavniAI</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-700 mb-4">
-            Everything you need to orchestrate AI
+            Score and rescue content before you publish
           </h2>
           <p className="text-ink-400 max-w-2xl mx-auto leading-relaxed">
-            From visual workflow design to real-time streaming — all the tools to build production-grade multi-agent systems.
+            Every pipeline step builds on the last — persona-aware hooks, viral scoring, automatic angle rotation if the score is low. No more posting blind.
           </p>
         </div>
 
@@ -203,17 +213,60 @@ export default function Home() {
       <section id="pipelines" className="bg-surface-50 dark:bg-surface-200/30 border-y border-surface-300/60">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-24">
           <div className="text-center mb-16">
-            <p className="section-label mb-3">Pipeline Templates</p>
+            <p className="section-label mb-3">The Viral Social Pipeline</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-700 mb-4">
-              Pre-built for every workflow
+              7 agents. One viral content pack.
             </h2>
             <p className="text-ink-400 max-w-2xl mx-auto leading-relaxed">
-              Start with battle-tested templates or build your own from scratch.
+              The only pipeline that scores your content <em>and</em> automatically rewrites it if the score is low — so you always publish your best angle.
             </p>
           </div>
+
+          {/* Viral pipeline — full-width hero card */}
+          <div className="glass-card-hover p-8 relative overflow-hidden group mb-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/8 to-pink-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative">
+              <div className="flex flex-wrap items-start gap-3 mb-5">
+                <span className="text-3xl">🔥</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-ink-700">Viral Social Orchestrator</h3>
+                  <p className="text-xs text-ink-400">Discover trends → Map your audience → Generate 16 hooks → Write Reel + Carousel → Score virality → Rotate angle if score is low → Adapt for every platform</p>
+                </div>
+                <Link href="/workflow/builder?template=viral-social" className="btn-primary text-xs px-4 py-2 whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                  Run Pipeline <ArrowRightIcon className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { emoji: '📈', name: 'Trend Scout', status: 'done' },
+                  { emoji: '🎯', name: 'Audience Persona', status: 'done' },
+                  { emoji: '🪝', name: 'Hook Generator', status: 'done' },
+                  { emoji: '🎬', name: 'Reel Script', status: 'active' },
+                  { emoji: '🎠', name: 'Carousel', status: 'pending' },
+                  { emoji: '⚡', name: 'Viral Score', status: 'pending' },
+                  { emoji: '🔄', name: 'Angle Rotator', status: 'pending' },
+                ].map((agent, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg border text-center transition-all ${
+                      agent.status === 'done' ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40'
+                      : agent.status === 'active' ? 'bg-accent-50/80 dark:bg-accent-50/20 border-accent-300/60 ring-2 ring-accent-500/20 animate-pulse'
+                      : 'bg-surface-100 border-surface-300'
+                    }`}>
+                      <span className="text-lg">{agent.emoji}</span>
+                      <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">{agent.name}</span>
+                      {agent.status === 'done' && <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold">✓</span>}
+                      {agent.status === 'active' && <span className="text-[8px] text-accent-600 font-bold">● Live</span>}
+                    </div>
+                    {i < 6 && <div className={`w-3 h-0.5 rounded-full shrink-0 ${agent.status === 'done' ? 'bg-emerald-400/60' : 'bg-surface-300'}`} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-6 stagger-children">
             <PipelineCard
-              title="Content Marketing Pipeline"
+              title="Content Marketing Pack"
               description="Research → Write → Edit → SEO → Social — complete content package in minutes"
               agents={[
                 { emoji: '🔬', name: 'Researcher', status: 'done' },
@@ -225,37 +278,15 @@ export default function Home() {
               gradient="from-blue-500/10 to-violet-500/10"
             />
             <PipelineCard
-              title="Code Review Pipeline"
-              description="Generate → Review → Test → Deploy — automated code quality at scale"
+              title="Custom Pipeline Builder"
+              description="Drag any agent onto the canvas, connect them, and run your own multi-agent workflow"
               agents={[
-                { emoji: '⚡', name: 'Generator', status: 'done' },
-                { emoji: '🔍', name: 'Reviewer', status: 'done' },
-                { emoji: '🧪', name: 'Tester', status: 'done' },
-                { emoji: '🚀', name: 'Deploy', status: 'active' },
+                { emoji: '🧩', name: 'Any Agent', status: 'done' },
+                { emoji: '🔗', name: 'Connect', status: 'done' },
+                { emoji: '▶️', name: 'Run', status: 'active' },
+                { emoji: '📤', name: 'Export', status: 'pending' },
               ]}
-              gradient="from-emerald-500/10 to-cyan-500/10"
-            />
-            <PipelineCard
-              title="HR Hiring Pipeline"
-              description="Screen → Interview → Evaluate → Outreach — streamline your hiring process"
-              agents={[
-                { emoji: '📄', name: 'Screener', status: 'done' },
-                { emoji: '💬', name: 'Interviewer', status: 'active' },
-                { emoji: '📊', name: 'Evaluator', status: 'pending' },
-                { emoji: '📧', name: 'Outreach', status: 'pending' },
-              ]}
-              gradient="from-amber-500/10 to-orange-500/10"
-            />
-            <PipelineCard
-              title="Legal Contract Review"
-              description="Parse → Compliance → Risk → Summary — AI-powered legal analysis"
-              agents={[
-                { emoji: '📑', name: 'Parser', status: 'done' },
-                { emoji: '⚖️', name: 'Compliance', status: 'done' },
-                { emoji: '🚩', name: 'Risk', status: 'active' },
-                { emoji: '📝', name: 'Summary', status: 'pending' },
-              ]}
-              gradient="from-rose-500/10 to-pink-500/10"
+              gradient="from-violet-500/10 to-pink-500/10"
             />
           </div>
         </div>
@@ -300,14 +331,14 @@ export default function Home() {
           <div className="relative px-8 py-16 sm:py-20 text-center">
             <p className="section-label mb-4">✨ Start in seconds</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-ink-700">
-              Ready to orchestrate <span className="gradient-text">intelligence</span>?
+              Your next post, <span className="gradient-text">scored before you publish</span>.
             </h2>
             <p className="text-ink-400 mb-10 max-w-xl mx-auto text-lg leading-relaxed">
-              18 agents, 6 providers, infinite possibilities. Build your first pipeline in under 2 minutes.
+              18 agents, 6 providers, 16 hook frameworks. Generate → Score → Rescue → Publish. First run free.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/workflow/builder" className="btn-hero text-base px-10 py-4 inline-flex items-center gap-2.5">
-                Open Workflow Builder
+              <Link href="/workflow/builder?template=viral-social" className="btn-hero text-base px-10 py-4 inline-flex items-center gap-2.5">
+                Try the Viral Pipeline
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
               <Link href="/dashboard" className="btn-secondary text-base px-8 py-4">
@@ -405,10 +436,10 @@ function PipelineCard({ title, description, agents, gradient }: {
 function WorkflowDemo() {
   const [activeStep, setActiveStep] = useState(0)
   const steps = [
-    { emoji: '🔬', name: 'Researcher', output: 'Found 12 sources on AI orchestration...' },
-    { emoji: '✍️', name: 'Writer', output: 'Drafting 2,500-word article with 8 sections...' },
-    { emoji: '📝', name: 'Editor', output: 'Quality score: 9.2/10 — refined tone & flow...' },
-    { emoji: '🎯', name: 'SEO Agent', output: 'SEO score: 94/100 — optimized meta tags...' },
+    { emoji: '📈', name: 'Trend Scout', output: 'Top trend: "AI tools for solopreneurs" — 340% velocity spike...' },
+    { emoji: '🎯', name: 'Audience Persona', output: 'Persona: Bootstrapped founder, 28-40, LinkedIn-primary, FOMO-driven...' },
+    { emoji: '🪝', name: 'Hook Generator', output: 'Hook #1 (Contrarian, 9.4/10): "I deleted my entire content calendar. Here\'s what replaced it." ...' },
+    { emoji: '⚡', name: 'Viral Scorer', output: 'SCORE: 9 — Hook: 9 · Shareability: 9 · Platform fit: 8 · CTA: 9...' },
   ]
 
   useEffect(() => {
@@ -428,7 +459,7 @@ function WorkflowDemo() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2.5">
             <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-semibold text-ink-500">Content Pipeline — Running</span>
+            <span className="text-xs font-semibold text-ink-500">Viral Social Pipeline — Running</span>
           </div>
           <div className="flex gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-red-400" />

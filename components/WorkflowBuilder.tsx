@@ -104,6 +104,8 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
   const [executionOutputs, setExecutionOutputs] = useState<Record<string, { output: string; status: string; provider?: string }> | null>(null)
   const [showOutputPanel, setShowOutputPanel] = useState(false)
   const [copiedExport, setCopiedExport] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [copiedShare, setCopiedShare] = useState(false)
 
   const [pipelineProgress, setPipelineProgress] = useState<StepProgress[]>([])
   const [streamingText, setStreamingText] = useState<Record<string, string>>({}) // agentId → live text
@@ -190,11 +192,15 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
       console.warn('Failed to persist run to localStorage:', err)
     }
 
-    // 2. Save to PostgreSQL via API (source of truth)
+    // 2. Save to PostgreSQL via API (source of truth) — capture run ID for share link
     fetch('/api/runs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(runData),
+    }).then(res => res.json()).then(data => {
+      if (data.ok && data.run?.id) {
+        setShareUrl(`${window.location.origin}/r/${data.run.id}`)
+      }
     }).catch(err => console.warn('Failed to persist run to API:', err))
   }
 
@@ -768,6 +774,27 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                 </div>
               )}
 
+              {/* Provider not configured banner */}
+              {mounted && (() => {
+                const s = loadSettings()
+                const hasRawSettings = typeof window !== 'undefined' && !!localStorage.getItem('navniai_llm_settings')
+                const providerCfg = s.providers[s.activeProvider as LLMProviderKey]
+                const registry = PROVIDER_REGISTRY[s.activeProvider as LLMProviderKey]
+                const needsKey = registry?.requiresApiKey && !providerCfg?.apiKey
+                if (!hasRawSettings || needsKey) {
+                  return (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-900/80 border border-amber-700/50 text-amber-100 backdrop-blur-xl text-xs shadow-lg">
+                      <span className="text-base">⚠️</span>
+                      <span>No AI provider connected — outputs will be simulated.</span>
+                      <a href="/settings" className="ml-1 underline underline-offset-2 font-semibold hover:text-white transition whitespace-nowrap">
+                        Connect provider →
+                      </a>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+
               {/* Empty state */}
               {nodes.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -1010,6 +1037,20 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                     >
                       ⬇️ Download .md
                     </button>
+                    {/* Share link */}
+                    {shareUrl && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(shareUrl).then(() => {
+                            setCopiedShare(true)
+                            setTimeout(() => setCopiedShare(false), 2500)
+                          })
+                        }}
+                        className="text-[11px] px-2.5 py-1 rounded-md border border-accent-300 text-accent-600 hover:bg-accent-50 transition flex items-center gap-1"
+                      >
+                        {copiedShare ? '✅ Copied!' : '🔗 Share'}
+                      </button>
+                    )}
                     <button onClick={() => setShowOutputPanel(false)}
                       className="text-ink-400 hover:text-ink-700 text-xs px-2 py-1 rounded-md hover:bg-surface-100 transition">
                       ✕
