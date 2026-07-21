@@ -15,6 +15,7 @@ interface AgentNodeData {
   // Live execution status — injected by WorkflowBuilder during a run
   status?: NodeStatus
   thinkingMessage?: string
+  liveText?: string // streaming LLM output — the agent's real-time "thoughts"
 }
 
 // Human-readable action labels
@@ -62,7 +63,7 @@ const STATUS_BADGE: Record<NodeStatus, { icon: string; label: string; cls: strin
 }
 
 export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => {
-  const { agent, action, condition, status, thinkingMessage } = data
+  const { agent, action, condition, status, thinkingMessage, liveText } = data
   const isConfigured = !!action
   const actionLabel = action ? (ACTION_LABELS[action] || action) : 'Not configured'
 
@@ -117,6 +118,16 @@ export const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => 
       {isRunning && thinkingMessage && (
         <div className="text-[10px] text-accent-500 mb-1.5 truncate animate-pulse font-medium">
           {thinkingMessage}
+        </div>
+      )}
+
+      {/* Live thought log — streaming inner monologue on the active node */}
+      {isRunning && liveText && (
+        <div className="mt-1.5 mb-1 max-h-20 overflow-y-auto rounded bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-2 py-1.5 nodrag nowheel">
+          <pre className="whitespace-pre-wrap font-mono text-[9px] leading-snug text-ink-500 dark:text-ink-400">
+            {liveText.slice(-320)}
+            <span className="inline-block w-1 h-2.5 bg-accent-500 animate-pulse ml-0.5 align-middle rounded-sm" />
+          </pre>
         </div>
       )}
 

@@ -22,7 +22,7 @@ export interface LLMSettings {
 }
 
 export interface LLMCallResult {
-  text: string; provider: LLMProviderKey | 'simulated'; model?: string
+  text: string; provider: LLMProviderKey | 'simulated' | 'demo'; model?: string
 }
 
 export const PROVIDER_REGISTRY: Record<LLMProviderKey, LLMProviderConfig> = {
@@ -102,6 +102,7 @@ export function getProviderBadge(key: string): { label: string; bgClass: string;
     case 'anthropic': return { label: 'Claude', bgClass: 'bg-orange-600/20', textClass: 'text-orange-400' }
     case 'groq': return { label: 'Groq', bgClass: 'bg-red-600/20', textClass: 'text-red-400' }
     case 'openrouter': return { label: 'OpenRouter', bgClass: 'bg-indigo-600/20', textClass: 'text-indigo-400' }
+    case 'demo': return { label: 'Free Demo', bgClass: 'bg-accent-600/20', textClass: 'text-accent-400' }
     case 'simulated': return { label: 'Simulated', bgClass: 'bg-gray-600/20', textClass: 'text-gray-400' }
     default: return { label: key, bgClass: 'bg-gray-600/20', textClass: 'text-gray-400' }
   }
@@ -297,6 +298,44 @@ function getEnvApiKey(provider: LLMProviderKey): string | undefined {
   return envMap[provider] || undefined
 }
 
+// --- Free Demo Fallback (server-proxied key, zero-setup first run) ---
+
+const DEMO_REMAINING_KEY = 'navniai_demo_remaining'
+
+/** Remaining free demo LLM calls, mirrored from the server. null = unknown/not started. */
+export function getDemoRunsRemaining(): number | null {
+  if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(DEMO_REMAINING_KEY)
+  return raw === null ? null : parseInt(raw, 10)
+}
+
+/**
+ * Call the server-side demo proxy. Only runs in the browser (relative URL).
+ * Returns the generated text, or null when the demo is unavailable/exhausted.
+ */
+async function callDemoProxy(sys: string, msg: string, cfg: LLMUserConfig, signal?: AbortSignal): Promise<string | null> {
+  if (typeof window === 'undefined' || typeof fetch === 'undefined') return null
+  try {
+    const res = await fetch('/api/demo/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: sys, message: msg, temperature: cfg.temperature, maxTokens: cfg.maxTokens }),
+      signal,
+    })
+    if (res.status === 429) {
+      try { localStorage.setItem(DEMO_REMAINING_KEY, '0') } catch { /* quota */ }
+      return null
+    }
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data?.ok || typeof data.text !== 'string') return null
+    if (typeof data.remaining === 'number') {
+      try { localStorage.setItem(DEMO_REMAINING_KEY, String(data.remaining)) } catch { /* quota */ }
+    }
+    return data.text
+  } catch { return null }
+}
+
 export async function callLLMWithFallback(
   systemPrompt: string, userMessage: string,
   settingsOrOptions?: LLMSettings | LLMCallOptions, timeoutMs = 30000,
@@ -351,6 +390,11 @@ export async function callLLMWithFallback(
       errors.push(`${key}: ${msg}`)
     }
   }
+  // Free demo fallback: server-proxied key so a brand-new user's first run works
+  const demoCfg = s.providers[s.activeProvider] || { provider: s.activeProvider }
+  const demoText = await callDemoProxy(systemPrompt, userMessage, demoCfg, signal)
+  if (demoText) return { text: demoText, provider: 'demo', model: 'demo' }
+
   // Final fallback: simulated response
   console.error('[NavniAI] All LLM providers failed (non-streaming):', errors)
   return {
@@ -578,6 +622,11 @@ export async function callLLMWithFallbackStreaming(
       errors.push(`${key}: ${msg}`)
     }
   }
+  // Free demo fallback: server-proxied key (non-streamed; emitted as one chunk)
+  const demoCfg = s.providers[s.activeProvider] || { provider: s.activeProvider }
+  const demoText = await callDemoProxy(systemPrompt, userMessage, demoCfg, signal)
+  if (demoText) { onChunk(demoText); return { text: demoText, provider: 'demo', model: 'demo' } }
+
   console.error('[NavniAI] All LLM providers failed:', errors)
   const simText = `[Simulated] All providers failed (${errors.join('; ')}). Input: ${userMessage.slice(0, 200)}`
   onChunk(simText)

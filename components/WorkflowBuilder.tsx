@@ -18,7 +18,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { SparklesIcon, ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { executeWorkflowClientSide, AGENT_THINKING_MESSAGES, type StepProgress, type OnStreamCallback, type OnCheckpointCallback, type CheckpointRequest, type CheckpointDecision } from '../lib/workflowExecutor'
-import { loadSettings, getProviderBadge, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
+import { loadSettings, getProviderBadge, getDemoRunsRemaining, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
 import { getTemplateById } from '../lib/pipelineTemplates'
 import { AgentNode } from './AgentNode'
 import { AgentPalette } from './AgentPalette'
@@ -106,6 +106,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
   const [copiedExport, setCopiedExport] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [copiedShare, setCopiedShare] = useState(false)
+  const [copiedLinkedIn, setCopiedLinkedIn] = useState(false)
 
   const [pipelineProgress, setPipelineProgress] = useState<StepProgress[]>([])
   const [streamingText, setStreamingText] = useState<Record<string, string>>({}) // agentId → live text
@@ -500,7 +501,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
     checkpointResolverRef.current = null
 
     // Reset all node statuses to 'pending' so the canvas shows a clean slate
-    setNodes(prev => prev.map(n => ({ ...n, data: { ...n.data, status: 'pending', thinkingMessage: undefined } })))
+    setNodes(prev => prev.map(n => ({ ...n, data: { ...n.data, status: 'pending', thinkingMessage: undefined, liveText: undefined } })))
 
     // Build progress entries from current nodes so the pipeline tracker renders
     const workflow = buildWorkflowPayload()
@@ -528,11 +529,20 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
     }
 
     let streamRAF: number | null = null
-    const handleStream: OnStreamCallback = (_stepId, agentId, _chunk, fullText) => {
+    const pendingNodeText: Record<string, string> = {}
+    const handleStream: OnStreamCallback = (stepId, agentId, _chunk, fullText) => {
       streamingTextRef.current = { ...streamingTextRef.current, [agentId]: fullText }
+      pendingNodeText[stepId] = fullText
       if (!streamRAF) {
         streamRAF = requestAnimationFrame(() => {
           setStreamingText({ ...streamingTextRef.current })
+          // Mirror live streaming text onto the active node as its "thought log"
+          const snapshot = { ...pendingNodeText }
+          setNodes(prev => prev.map(n =>
+            snapshot[n.id] !== undefined
+              ? { ...n, data: { ...n.data, liveText: snapshot[n.id] } }
+              : n
+          ))
           streamRAF = null
         })
       }
@@ -782,12 +792,20 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                 const registry = PROVIDER_REGISTRY[s.activeProvider as LLMProviderKey]
                 const needsKey = registry?.requiresApiKey && !providerCfg?.apiKey
                 if (!hasRawSettings || needsKey) {
+                  const remaining = getDemoRunsRemaining()
+                  const exhausted = remaining === 0
                   return (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-900/80 border border-amber-700/50 text-amber-100 backdrop-blur-xl text-xs shadow-lg">
-                      <span className="text-base">⚠️</span>
-                      <span>No AI provider connected — outputs will be simulated.</span>
+                    <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-4 py-2.5 rounded-xl backdrop-blur-xl text-xs shadow-lg border ${
+                      exhausted ? 'bg-red-900/80 border-red-700/50 text-red-100' : 'bg-amber-900/80 border-amber-700/50 text-amber-100'
+                    }`}>
+                      <span className="text-base">{exhausted ? '🔒' : '✨'}</span>
+                      <span>
+                        {exhausted
+                          ? 'Free demo runs used up — connect a provider to keep generating.'
+                          : 'No provider connected — running in free demo mode (no setup needed).'}
+                      </span>
                       <a href="/settings" className="ml-1 underline underline-offset-2 font-semibold hover:text-white transition whitespace-nowrap">
-                        Connect provider →
+                        {exhausted ? 'Connect provider →' : 'Use your own key →'}
                       </a>
                     </div>
                   )
@@ -1057,6 +1075,42 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                     </button>
                   </div>
                 </div>
+
+                {/* ── Publish bar: push the generated pack straight to social ── */}
+                {(() => {
+                  const padNode = nodes.find(n => n.data?.agent?.id === 'platform_adapter')
+                  const padOut = padNode ? executionOutputs[padNode.id]?.output : ''
+                  const fullText = (padOut && padOut.trim())
+                    ? padOut.trim()
+                    : Object.values(executionOutputs).map(r => r.output).join('\n\n').trim()
+                  if (!fullText) return null
+                  const xText = fullText.length > 275 ? fullText.slice(0, 272) + '…' : fullText
+                  return (
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-surface-300 bg-surface-50/60 dark:bg-surface-900/40">
+                      <span className="text-[11px] font-semibold text-ink-500 mr-1">🚀 Publish:</span>
+                      <button
+                        onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}`, '_blank', 'noopener')}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-black text-white hover:bg-ink-800 transition flex items-center gap-1"
+                      >
+                        𝕏 Post to X
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(fullText).then(() => {
+                            setCopiedLinkedIn(true)
+                            setTimeout(() => setCopiedLinkedIn(false), 3000)
+                            window.open('https://www.linkedin.com/feed/', '_blank', 'noopener')
+                          })
+                        }}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-[#0a66c2] text-white hover:bg-[#004182] transition flex items-center gap-1"
+                      >
+                        {copiedLinkedIn ? '✅ Copied — paste in LinkedIn' : 'in Post to LinkedIn'}
+                      </button>
+                      <span className="text-[10px] text-ink-300 ml-auto">Uses your Platform Adapter output</span>
+                    </div>
+                  )
+                })()}
+
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {Object.entries(executionOutputs).map(([stepId, stepResult]) => {
                     const node = nodes.find(n => n.id === stepId)
