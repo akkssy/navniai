@@ -1,3 +1,6 @@
+# Cognify / vector DB index (large binary files — not suitable for GitHub)
+.cognify/
+
 # Dependencies
 node_modules/
 .pnp
