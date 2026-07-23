@@ -49,6 +49,7 @@ export const VIRAL_SOCIAL_AGENTS: Agent[] = [
   { id: 'viral_scorer', name: 'Viral Scorer', icon: '⚡', color: '#eab308', description: 'Score content on hook strength, shareability, platform fit & CTA clarity', category: 'system' },
   { id: 'angle_rotator', name: 'Angle Rotator', icon: '🔄', color: '#ec4899', description: 'When viral score is low, proposes 3 alternative angles and rewrites content from the strongest one', category: 'system' },
   { id: 'platform_adapter', name: 'Platform Adapter', icon: '🔧', color: '#10b981', description: 'Reformat content for platform-specific constraints & algorithm signals', category: 'system' },
+  { id: 'shot_compiler', name: 'Shot Compiler', icon: '🎞️', color: '#7c3aed', description: 'Convert the final reel script into a structured scene-by-scene JSON storyboard for preview and video production', category: 'system' },
 ]
 
 // Keep backward compat export

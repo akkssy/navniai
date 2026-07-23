@@ -18,6 +18,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { SparklesIcon, ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { executeWorkflowClientSide, AGENT_THINKING_MESSAGES, type StepProgress, type OnStreamCallback, type OnCheckpointCallback, type CheckpointRequest, type CheckpointDecision } from '../lib/workflowExecutor'
+import StoryboardPreview from '@/components/StoryboardPreview'
 import { loadSettings, getProviderBadge, getDemoRunsRemaining, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
 import { getTemplateById } from '../lib/pipelineTemplates'
 import { AgentNode } from './AgentNode'
@@ -1109,6 +1110,14 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                       <span className="text-[10px] text-ink-300 ml-auto">Uses your Platform Adapter output</span>
                     </div>
                   )
+                })()}
+
+                {/* ── Storyboard Preview: rendered when shot_compiler step is present ── */}
+                {(() => {
+                  const scNode = nodes.find(n => n.data?.agent?.id === 'shot_compiler')
+                  const scOut = scNode ? executionOutputs[scNode.id]?.output : ''
+                  if (!scOut?.includes('===SCENES===')) return null
+                  return <StoryboardPreview rawOutput={scOut} />
                 })()}
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">

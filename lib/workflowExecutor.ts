@@ -567,6 +567,102 @@ FIRST_COMMENT: (hashtags for first comment)
 
 ===ADAPTATION_NOTES===
 Key changes made per platform and why (3-4 bullet points).`,
+
+  shot_compiler: `You are a shot compiler. You receive a reel script and convert it into a strict JSON scene list for in-app storyboard preview and future video production.
+
+## Input Priority:
+- If the Angle Rotator output contains a rewritten REEL_SCRIPT section, use THAT version (it is the improved script).
+- Otherwise use the original Reel Scripter output.
+
+## Your job:
+Extract every timed beat from the reel script and output a JSON array. Each element represents one scene.
+
+## MANDATORY Output Format — output ONLY this, nothing else:
+
+===SCENES===
+[
+  {
+    "id": 1,
+    "label": "HOOK",
+    "timeRange": "0-3s",
+    "duration": 3,
+    "spokenLine": "Exact voiceover words — natural spoken language, not written prose.",
+    "onScreenText": "3-6 BOLD UPPERCASE WORDS",
+    "visualPrompt": "Specific B-roll direction in one sentence (e.g. 'close-up hands typing on laptop, cinematic warm lighting')",
+    "transition": "cut"
+  },
+  {
+    "id": 2,
+    "label": "LOOP",
+    "timeRange": "3-15s",
+    "duration": 12,
+    "spokenLine": "...",
+    "onScreenText": "...",
+    "visualPrompt": "...",
+    "transition": "fade"
+  },
+  {
+    "id": 3,
+    "label": "VALUE_1",
+    "timeRange": "15-25s",
+    "duration": 10,
+    "spokenLine": "...",
+    "onScreenText": "...",
+    "visualPrompt": "...",
+    "transition": "cut"
+  },
+  {
+    "id": 4,
+    "label": "VALUE_2",
+    "timeRange": "25-35s",
+    "duration": 10,
+    "spokenLine": "...",
+    "onScreenText": "...",
+    "visualPrompt": "...",
+    "transition": "cut"
+  },
+  {
+    "id": 5,
+    "label": "VALUE_3",
+    "timeRange": "35-45s",
+    "duration": 10,
+    "spokenLine": "...",
+    "onScreenText": "...",
+    "visualPrompt": "...",
+    "transition": "cut"
+  },
+  {
+    "id": 6,
+    "label": "INTERRUPT",
+    "timeRange": "45-55s",
+    "duration": 10,
+    "spokenLine": "...",
+    "onScreenText": "...",
+    "visualPrompt": "...",
+    "transition": "zoom"
+  },
+  {
+    "id": 7,
+    "label": "CTA",
+    "timeRange": "55-60s",
+    "duration": 5,
+    "spokenLine": "...",
+    "onScreenText": "FOLLOW FOR MORE",
+    "visualPrompt": "...",
+    "transition": "fade"
+  }
+]
+===END_SCENES===
+
+## Rules:
+- Output ONLY the JSON array between ===SCENES=== and ===END_SCENES===. No commentary.
+- spokenLine: exact voiceover/on-camera speech. Natural, conversational, not formatted.
+- onScreenText: 3-8 UPPERCASE punchy words shown as bold caption overlay.
+- visualPrompt: specific B-roll or visual direction (e.g. "aerial city timelapse, golden hour, fast motion").
+- Split VALUE beats into VALUE_1, VALUE_2, VALUE_3 — one per insight in the script.
+- All durations must sum to exactly 60 seconds.
+- transition values: "cut" | "fade" | "zoom" | "slide".
+- Valid JSON only — no trailing commas, no comments inside JSON.`,
 }
 
 function getSimulatedOutput(step: WorkflowStep): string {
@@ -747,6 +843,16 @@ export const AGENT_THINKING_MESSAGES: Record<string, string[]> = {
     'Adjusting for Facebook...',
     'Checking character limits...',
     'Finalizing platform versions...',
+  ],
+  shot_compiler: [
+    'Reading final reel script...',
+    'Extracting scene beats...',
+    'Writing voiceover lines...',
+    'Composing on-screen captions...',
+    'Generating B-roll directions...',
+    'Calculating scene timings...',
+    'Validating 60-second structure...',
+    'Outputting storyboard JSON...',
   ],
 }
 

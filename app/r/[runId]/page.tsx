@@ -70,7 +70,7 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Run header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
@@ -83,7 +83,7 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
               <span className="text-[10px] text-ink-400">{run.executionTime.toFixed(1)}s</span>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-ink-700 mb-1">{run.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-ink-700 mb-1 break-words">{run.name}</h1>
           <p className="text-sm text-ink-400">
             {run.stepsCompleted}/{run.stepsTotal} steps completed
             {run.completedAt && ` · ${new Date(run.completedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}`}
@@ -94,11 +94,11 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
         <div className="space-y-4 mb-10">
           {run.stepResults.map((step) => (
             <div key={step.id} className="glass-card overflow-hidden">
-              <div className="px-5 py-3 border-b border-surface-300 flex items-center gap-2.5">
-                <span className="text-xl">{AGENT_ICONS[step.agentId] || '🤖'}</span>
+              <div className="px-4 sm:px-5 py-3 border-b border-surface-300 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-lg sm:text-xl">{AGENT_ICONS[step.agentId] || '🤖'}</span>
                 <span className="text-sm font-semibold text-ink-700">{step.agentName || step.agentId}</span>
-                <span className="text-[10px] text-ink-400 ml-1">→ {step.action}</span>
-                <span className={`ml-auto text-[10px] px-2 py-0.5 rounded ${
+                <span className="text-[10px] text-ink-400 hidden sm:inline">→ {step.action}</span>
+                <span className={`sm:ml-auto text-[10px] px-2 py-0.5 rounded ${
                   step.status === 'completed'
                     ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
                     : 'bg-red-50 text-red-500'
@@ -107,7 +107,7 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
                   <span className="text-[10px] text-ink-300 bg-surface-100 px-2 py-0.5 rounded border border-surface-200">{step.provider}</span>
                 )}
               </div>
-              <pre className="px-5 py-4 text-xs text-ink-500 whitespace-pre-wrap font-mono leading-relaxed overflow-x-auto max-h-80">
+              <pre className="px-4 sm:px-5 py-4 text-xs text-ink-500 whitespace-pre-wrap break-words font-mono leading-relaxed overflow-x-auto max-h-80">
                 {step.output}
               </pre>
             </div>
@@ -115,7 +115,7 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
         </div>
 
         {/* CTA */}
-        <div className="glass-card p-8 text-center">
+        <div className="glass-card p-6 sm:p-8 text-center">
           <p className="text-2xl mb-3">🔥</p>
           <h2 className="text-xl font-bold text-ink-700 mb-2">Made with NavniAI</h2>
           <p className="text-sm text-ink-400 mb-6 max-w-sm mx-auto">

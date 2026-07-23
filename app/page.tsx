@@ -112,7 +112,7 @@ export default function Home() {
               </div>
 
               {/* Micro-stats under CTA */}
-              <div className="flex items-center gap-6 mt-10 animate-slide-up-delay-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mt-10 animate-slide-up-delay-3">
                 <div className="flex items-center gap-2 text-sm text-ink-400">
                   <CheckBadgeIcon className="h-4 w-4 text-emerald-500" />
                   No credit card required
@@ -403,10 +403,10 @@ function PipelineCard({ title, description, agents, gradient }: {
       <div className="relative">
         <h3 className="text-base font-semibold text-ink-700 mb-1.5">{title}</h3>
         <p className="text-xs text-ink-400 mb-5">{description}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {agents.map((agent, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className={`flex flex-col items-center gap-1.5 px-3.5 py-2.5 rounded-lg border transition-all ${
+            <div key={i} className="flex items-center gap-2 shrink-0">
+              <div className={`flex flex-col items-center gap-1.5 px-3.5 py-2.5 rounded-lg border transition-all shrink-0 ${
                 agent.status === 'done'
                   ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40'
                   : agent.status === 'active'
@@ -414,7 +414,7 @@ function PipelineCard({ title, description, agents, gradient }: {
                   : 'bg-surface-100 border-surface-300'
               }`}>
                 <span className="text-lg">{agent.emoji}</span>
-                <span className="text-[10px] font-semibold text-ink-500">{agent.name}</span>
+                <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">{agent.name}</span>
                 {agent.status === 'done' && <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold">✓ Done</span>}
                 {agent.status === 'active' && <span className="text-[8px] text-accent-600 dark:text-accent-400 font-bold">● Live</span>}
               </div>

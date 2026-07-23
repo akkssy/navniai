@@ -401,6 +401,7 @@ export const PIPELINE_TEMPLATES: PipelineTemplate[] = [
       { agentId: 'viral_scorer', action: 'score_content', label: 'Viral Score', inputs: { content: '{{reel_scripter.output}}\n\n---\n\n{{carousel_writer.output}}', platform: 'Instagram', persona_profile: '{{audience_persona.output}}' } },
       { agentId: 'angle_rotator', action: 'rotate_angle', label: 'Big Pivot / Angle Rotator', inputs: { viral_score_output: '{{viral_scorer.output}}', reel_content: '{{reel_scripter.output}}', carousel_content: '{{carousel_writer.output}}', hooks: '{{hook_generator.output}}', persona_profile: '{{audience_persona.output}}' } },
       { agentId: 'platform_adapter', action: 'adapt_content', label: 'Platform Adaptation', inputs: { content: '{{angle_rotator.output}}\n\n---\n\nOriginal Reel:\n{{reel_scripter.output}}\n\nOriginal Carousel:\n{{carousel_writer.output}}', platforms: 'X, Instagram, LinkedIn, Facebook' } },
+      { agentId: 'shot_compiler', action: 'compile_shots', label: 'Storyboard Compiler', inputs: { reel_script: '{{reel_scripter.output}}', angle_output: '{{angle_rotator.output}}' } },
     ],
     briefFields: [
       { key: 'niche', label: 'Your Niche', placeholder: 'e.g. AI tools for developers, personal finance, fitness', required: true },
