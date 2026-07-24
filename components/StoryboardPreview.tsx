@@ -34,12 +34,39 @@ function gradient(label: string) {
   return GRADIENTS[label] ?? 'from-slate-700 via-slate-600 to-slate-700'
 }
 
+// Coerce one raw JSON entry into a valid scene, defaulting missing/malformed
+// fields so a single bad element never crashes the preview or the .srt export.
+function coerceScene(raw: any, index: number): StoryboardScene | null {
+  if (!raw || typeof raw !== 'object') return null
+  const duration = Number(raw.duration)
+  return {
+    id: Number.isFinite(Number(raw.id)) ? Number(raw.id) : index + 1,
+    label: typeof raw.label === 'string' && raw.label.trim() ? raw.label : `SCENE_${index + 1}`,
+    timeRange: typeof raw.timeRange === 'string' ? raw.timeRange : '',
+    duration: Number.isFinite(duration) && duration > 0 ? duration : 5,
+    spokenLine: typeof raw.spokenLine === 'string' ? raw.spokenLine : '',
+    onScreenText: typeof raw.onScreenText === 'string' ? raw.onScreenText : '',
+    visualPrompt: typeof raw.visualPrompt === 'string' ? raw.visualPrompt : '',
+    transition: typeof raw.transition === 'string' ? raw.transition : 'cut',
+  }
+}
+
 export function parseScenes(raw: string): StoryboardScene[] | null {
-  const m = raw.match(/===SCENES===\s*([\s\S]*?)\s*===END_SCENES===/)
-  if (!m) return null
+  // Prefer the delimited block, but tolerate a missing closing marker (truncated output).
+  const block = raw.match(/===SCENES===\s*([\s\S]*?)\s*===END_SCENES===/)?.[1]
+    ?? raw.match(/===SCENES===\s*([\s\S]*)/)?.[1]
+  if (!block) return null
+  // Extract the JSON array even if it's wrapped in prose or code fences.
+  const start = block.indexOf('[')
+  const end = block.lastIndexOf(']')
+  if (start === -1 || end === -1 || end <= start) return null
   try {
-    const parsed = JSON.parse(m[1])
-    return Array.isArray(parsed) ? parsed : null
+    const parsed = JSON.parse(block.slice(start, end + 1))
+    if (!Array.isArray(parsed)) return null
+    const scenes = parsed
+      .map(coerceScene)
+      .filter((s): s is StoryboardScene => s !== null)
+    return scenes.length > 0 ? scenes : null
   } catch {
     return null
   }
@@ -176,7 +203,9 @@ export default function StoryboardPreview({ rawOutput }: Props) {
   }
 
   if (!scenes) return null
-  const active = scenes[activeIdx]
+  // Clamp: the parsed scene count can change (e.g. while output is still streaming),
+  // so guard against a stale activeIdx pointing past the end of the list.
+  const active = scenes[activeIdx] ?? scenes[0]
   const totalDuration = scenes.reduce((s, sc) => s + sc.duration, 0)
 
   return (

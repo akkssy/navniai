@@ -11,7 +11,7 @@ import { NextRequest } from 'next/server'
 
 function makeRequest(cookieValue?: string, body: object = { system: 'sys', message: 'hello' }) {
   const url = 'http://localhost/api/demo/generate'
-  const init: RequestInit = {
+  const init = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
