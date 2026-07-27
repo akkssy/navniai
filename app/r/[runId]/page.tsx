@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { SparklesIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 
@@ -61,7 +62,7 @@ export default async function SharedRunPage({ params }: { params: { runId: strin
       <nav className="border-b border-surface-300/50 bg-card/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <SparklesIcon className="h-5 w-5 text-accent-500" />
+            <Logo size={22} className="rounded-md" />
             <span className="text-base font-bold text-ink-700">NavniAI</span>
           </Link>
           <Link href={templateLink} className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5">

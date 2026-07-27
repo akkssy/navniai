@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { SparklesIcon, ArrowUpTrayIcon, TrashIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import { ArrowUpTrayIcon, TrashIcon, MagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import ThemeToggle from '@/components/ThemeToggle'
 
 interface Document {
@@ -106,7 +107,7 @@ export default function KnowledgeBasePage() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2.5">
-              <SparklesIcon className="h-7 w-7 text-accent-500" />
+              <Logo size={28} />
               <span className="text-xl font-bold text-ink-700">NavniAI</span>
             </Link>
             <div className="flex items-center gap-3">

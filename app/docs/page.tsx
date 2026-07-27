@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { SparklesIcon, BookOpenIcon } from '@heroicons/react/24/outline'
+import { BookOpenIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import ThemeToggle from '@/components/ThemeToggle'
 
 const sections = [
@@ -57,7 +58,7 @@ export default function DocsPage() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2.5">
-              <SparklesIcon className="h-7 w-7 text-accent-500" />
+              <Logo size={28} />
               <span className="text-xl font-bold text-ink-700">NavniAI</span>
             </Link>
             <div className="flex items-center gap-3">

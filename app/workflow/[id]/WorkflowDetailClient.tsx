@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { SparklesIcon, PlayIcon, PencilSquareIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { PlayIcon, PencilSquareIcon, ClockIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import { getTemplateById, getAgentForStep } from '@/lib/pipelineTemplates'
 import ThemeToggle from '@/components/ThemeToggle'
 
@@ -30,7 +31,7 @@ export default function WorkflowDetailClient({ params }: { params: { id: string 
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-14">
             <Link href="/" className="flex items-center gap-2">
-              <SparklesIcon className="h-6 w-6 text-accent-500" />
+              <Logo size={26} />
               <span className="text-lg font-bold text-ink-700">NavniAI</span>
             </Link>
             <div className="flex items-center gap-3">

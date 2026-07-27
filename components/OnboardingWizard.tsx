@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { SparklesIcon, RocketLaunchIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import { RocketLaunchIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 
 const FEATURED = [
   {
@@ -43,9 +44,7 @@ function StepWelcome() {
   return (
     <div className="text-center">
       <div className="flex justify-center mb-5">
-        <div className="w-16 h-16 rounded-2xl bg-accent-100 dark:bg-accent-950 flex items-center justify-center">
-          <SparklesIcon className="h-8 w-8 text-accent-500" />
-        </div>
+        <Logo size={64} className="rounded-2xl" />
       </div>
       <h2 className="text-2xl font-bold text-ink-700 mb-2">Welcome to NavniAI</h2>
       <p className="text-sm text-ink-400 mb-8 max-w-md mx-auto">

@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic'
 
 const OnboardingWizard = dynamic(() => import('@/components/OnboardingWizard'), { ssr: false })
 import { PlusIcon, PlayIcon, ClockIcon, ArrowRightOnRectangleIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline'
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import { PIPELINE_TEMPLATES, getAgentForStep } from '@/lib/pipelineTemplates'
 import ThemeToggle from '@/components/ThemeToggle'
 import { listRuns as listLocalRuns, getRunStats as getLocalStats, deleteRun as deleteLocalRun, clearAllRuns as clearLocalRuns, type StoredRun, type RunStats } from '@/lib/runStorage'
@@ -106,7 +106,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-6">
               <Link href="/" className="flex items-center gap-2">
-                <SparklesIcon className="h-6 w-6 text-accent-500" />
+                <Logo size={26} />
                 <span className="text-lg font-bold text-ink-700">NavniAI</span>
               </Link>
               <h1 className="text-sm font-medium text-ink-400">Dashboard</h1>

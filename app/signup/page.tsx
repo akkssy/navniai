@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
@@ -60,7 +60,7 @@ export default function SignupPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <SparklesIcon className="h-8 w-8 text-accent-500" />
+            <Logo size={32} />
             <span className="text-2xl font-bold text-ink-700">NavniAI</span>
           </Link>
           <p className="text-ink-400 text-sm mt-2">Create your free account</p>

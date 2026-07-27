@@ -2,30 +2,21 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ArrowRightIcon, SparklesIcon, BoltIcon, UserGroupIcon, PuzzlePieceIcon, CpuChipIcon, EyeIcon, CommandLineIcon, CheckBadgeIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon, BoltIcon, UserGroupIcon, PuzzlePieceIcon, CpuChipIcon, EyeIcon, CommandLineIcon, CheckBadgeIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 import ThemeToggle from '@/components/ThemeToggle'
+import Logo from '@/components/Logo'
+import { SYSTEM_AGENTS, MARKETING_AGENTS, VIRAL_SOCIAL_AGENTS } from '@/lib/agents'
+import { ALL_PROVIDER_KEYS } from '@/lib/llmProviders'
+import { getTemplateById, getTemplateStepAgents } from '@/lib/pipelineTemplates'
 
-// Animated counter hook
-function useCounter(target: number, duration = 2000) {
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    let start = 0
-    const step = target / (duration / 16)
-    const timer = setInterval(() => {
-      start += step
-      if (start >= target) { setCount(target); clearInterval(timer) }
-      else setCount(Math.floor(start))
-    }, 16)
-    return () => clearInterval(timer)
-  }, [target, duration])
-  return count
-}
+// Real counts derived from source so the page never drifts from the codebase
+const TOTAL_AGENTS = SYSTEM_AGENTS.length + MARKETING_AGENTS.length + VIRAL_SOCIAL_AGENTS.length
+const PROVIDER_COUNT = ALL_PROVIDER_KEYS.length
+const VIRAL_TEMPLATE = getTemplateById('viral-social')
+const VIRAL_AGENTS = VIRAL_TEMPLATE ? getTemplateStepAgents(VIRAL_TEMPLATE) : []
+const VIRAL_STEP_COUNT = VIRAL_AGENTS.length
 
 export default function Home() {
-  const agents = useCounter(18, 1500)
-  const providers = useCounter(6, 1200)
-  const hooks = useCounter(16, 1400)
-
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -33,10 +24,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <SparklesIcon className="h-7 w-7 text-accent-500" />
-                <div className="absolute -inset-1 bg-accent-500/20 rounded-full blur-md" />
-              </div>
+              <Logo size={32} />
               <span className="text-xl font-bold text-ink-700 tracking-tight">NavniAI</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
@@ -49,8 +37,8 @@ export default function Home() {
               <Link href="/login" className="px-4 py-2 text-sm text-ink-400 hover:text-ink-700 transition-colors hidden sm:block">
                 Sign in
               </Link>
-              <Link href="/workflow/builder" className="btn-primary text-sm">
-                Get Started
+              <Link href="/workflow/builder?template=viral-social" className="btn-primary text-sm">
+                Try Free
               </Link>
             </div>
           </div>
@@ -59,13 +47,9 @@ export default function Home() {
 
       {/* ═══ HERO ═══ */}
       <section className="relative overflow-hidden">
-        {/* Background layers */}
+        {/* Background — single restrained mesh */}
         <div className="absolute inset-0 hero-mesh" />
-        <div className="absolute inset-0 grid-pattern" />
-        {/* Floating glow orbs — multi-hue */}
-        <div className="absolute top-20 left-[12%] w-80 h-80 bg-accent-500/10 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-16 right-[8%] w-96 h-96 bg-violet-500/8 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[60%] left-[40%] w-64 h-64 bg-rose-500/5 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-24 right-[10%] w-96 h-96 bg-accent-500/8 rounded-full blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8 pt-20 sm:pt-28 pb-20">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -100,14 +84,14 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap gap-4 animate-slide-up-delay-2">
+              <div className="flex flex-wrap items-center gap-5 animate-slide-up-delay-2">
                 <Link href="/workflow/builder?template=viral-social" className="btn-hero text-base px-8 py-3.5 flex items-center gap-2.5">
                   Try Viral Pipeline Free
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>
-                <Link href="/dashboard" className="btn-secondary text-base px-8 py-3.5 flex items-center gap-2">
+                <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition-colors inline-flex items-center gap-1.5">
                   <EyeIcon className="h-4 w-4" />
-                  View Dashboard
+                  View dashboard
                 </Link>
               </div>
 
@@ -132,14 +116,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ STATS BAR ═══ */}
-      <section className="border-y border-surface-300/50 bg-card/40 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatItem value={agents} suffix="+" label="Pre-built Agents" icon={<CpuChipIcon className="h-5 w-5" />} />
-            <StatItem value={providers} label="LLM Providers" icon={<BoltIcon className="h-5 w-5" />} />
-            <StatItem value={hooks} label="Hook Frameworks" icon={<PuzzlePieceIcon className="h-5 w-5" />} />
-            <StatItem value={100} suffix="%" label="BYO Model — Free" icon={<CommandLineIcon className="h-5 w-5" />} />
+      {/* ═══ TRUST STRIP ═══ */}
+      <section className="border-y border-surface-300/50 bg-card/40">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-ink-400">
+            <span className="flex items-center gap-2"><CpuChipIcon className="h-4 w-4 text-accent-500" /><strong className="text-ink-700 font-semibold">{TOTAL_AGENTS}</strong> pre-built agents</span>
+            <span className="hidden sm:block h-4 w-px bg-surface-300" />
+            <span className="flex items-center gap-2"><BoltIcon className="h-4 w-4 text-accent-500" /><strong className="text-ink-700 font-semibold">{PROVIDER_COUNT}</strong> LLM providers</span>
+            <span className="hidden sm:block h-4 w-px bg-surface-300" />
+            <span className="flex items-center gap-2"><CommandLineIcon className="h-4 w-4 text-accent-500" /><strong className="text-ink-700 font-semibold">{VIRAL_STEP_COUNT}</strong>-step viral pipeline</span>
+            <span className="hidden sm:block h-4 w-px bg-surface-300" />
+            <span className="flex items-center gap-2"><LockClosedIcon className="h-4 w-4 text-accent-500" />Runs 100% locally with Ollama — free</span>
           </div>
         </div>
       </section>
@@ -215,7 +202,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <p className="section-label mb-3">The Viral Social Pipeline</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-700 mb-4">
-              7 agents. One viral content pack.
+              {VIRAL_STEP_COUNT} agents. One viral content pack.
             </h2>
             <p className="text-ink-400 max-w-2xl mx-auto leading-relaxed">
               The only pipeline that scores your content <em>and</em> automatically rewrites it if the score is low — so you always publish your best angle.
@@ -237,27 +224,13 @@ export default function Home() {
                 </Link>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { emoji: '📈', name: 'Trend Scout', status: 'done' },
-                  { emoji: '🎯', name: 'Audience Persona', status: 'done' },
-                  { emoji: '🪝', name: 'Hook Generator', status: 'done' },
-                  { emoji: '🎬', name: 'Reel Script', status: 'active' },
-                  { emoji: '🎠', name: 'Carousel', status: 'pending' },
-                  { emoji: '⚡', name: 'Viral Score', status: 'pending' },
-                  { emoji: '🔄', name: 'Angle Rotator', status: 'pending' },
-                ].map((agent, i) => (
+                {VIRAL_AGENTS.map((s, i) => (
                   <div key={i} className="flex items-center gap-1.5">
-                    <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg border text-center transition-all ${
-                      agent.status === 'done' ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40'
-                      : agent.status === 'active' ? 'bg-accent-50/80 dark:bg-accent-50/20 border-accent-300/60 ring-2 ring-accent-500/20 animate-pulse'
-                      : 'bg-surface-100 border-surface-300'
-                    }`}>
-                      <span className="text-lg">{agent.emoji}</span>
-                      <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">{agent.name}</span>
-                      {agent.status === 'done' && <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold">✓</span>}
-                      {agent.status === 'active' && <span className="text-[8px] text-accent-600 font-bold">● Live</span>}
+                    <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border text-center bg-surface-100 border-surface-300">
+                      <span className="text-lg">{s.agent?.icon}</span>
+                      <span className="text-[10px] font-semibold text-ink-500 whitespace-nowrap">{s.agent?.name}</span>
                     </div>
-                    {i < 6 && <div className={`w-3 h-0.5 rounded-full shrink-0 ${agent.status === 'done' ? 'bg-emerald-400/60' : 'bg-surface-300'}`} />}
+                    {i < VIRAL_AGENTS.length - 1 && <div className="w-3 h-0.5 rounded-full shrink-0 bg-surface-300" />}
                   </div>
                 ))}
               </div>
@@ -300,21 +273,18 @@ export default function Home() {
             Bring your own model
           </h2>
         </div>
-        <div className="flex flex-wrap justify-center gap-5 items-center stagger-children">
+        <div className="flex flex-wrap justify-center gap-4 items-stretch stagger-children">
           {[
-            { name: 'Ollama', letter: 'O', bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-700 dark:text-zinc-200', desc: 'Local / Private' },
-            { name: 'OpenAI', letter: 'AI', bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', desc: 'GPT-4o' },
-            { name: 'Anthropic', letter: 'A', bg: 'bg-orange-50 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-400', desc: 'Claude' },
-            { name: 'Google', letter: 'G', bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-600 dark:text-blue-400', desc: 'Gemini' },
-            { name: 'Groq', letter: 'Gq', bg: 'bg-violet-50 dark:bg-violet-950/40', text: 'text-violet-600 dark:text-violet-400', desc: 'Ultra-fast' },
-            { name: 'OpenRouter', letter: 'OR', bg: 'bg-accent-50 dark:bg-accent-50/30', text: 'text-accent-600 dark:text-accent-400', desc: 'Any Model' },
+            { name: 'Ollama', desc: 'Local / Private' },
+            { name: 'OpenAI', desc: 'GPT-4o' },
+            { name: 'Anthropic', desc: 'Claude' },
+            { name: 'Google', desc: 'Gemini' },
+            { name: 'Groq', desc: 'Ultra-fast' },
+            { name: 'OpenRouter', desc: 'Any Model' },
           ].map((p) => (
-            <div key={p.name} className="glass-card-hover px-6 py-5 flex flex-col items-center gap-2 min-w-[130px]">
-              <div className={`w-10 h-10 rounded-xl ${p.bg} flex items-center justify-center`}>
-                <span className={`text-sm font-black ${p.text}`}>{p.letter}</span>
-              </div>
-              <span className="text-sm font-bold text-ink-700">{p.name}</span>
-              <span className="text-[10px] text-ink-400 font-medium">{p.desc}</span>
+            <div key={p.name} className="glass-card px-6 py-4 flex flex-col items-center justify-center gap-1 min-w-[130px]">
+              <span className="text-base font-bold text-ink-700">{p.name}</span>
+              <span className="text-[11px] text-ink-400 font-medium">{p.desc}</span>
             </div>
           ))}
         </div>
@@ -324,25 +294,21 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 lg:px-8 pb-20">
         <div className="relative overflow-hidden rounded-2xl gradient-border">
           <div className="absolute inset-0 hero-mesh" />
-          <div className="absolute inset-0 grid-pattern opacity-40" />
-          {/* Glow accents */}
-          <div className="absolute top-0 left-1/4 w-64 h-64 bg-accent-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-violet-500/8 rounded-full blur-3xl" />
           <div className="relative px-8 py-16 sm:py-20 text-center">
-            <p className="section-label mb-4">✨ Start in seconds</p>
+            <p className="section-label mb-4">Start in seconds</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-ink-700">
               Your next post, <span className="gradient-text">scored before you publish</span>.
             </h2>
             <p className="text-ink-400 mb-10 max-w-xl mx-auto text-lg leading-relaxed">
-              18 agents, 6 providers, 16 hook frameworks. Generate → Score → Rescue → Publish. First run free.
+              {TOTAL_AGENTS} agents, {PROVIDER_COUNT} providers, one {VIRAL_STEP_COUNT}-step pipeline that scores your content and rewrites it if the score is low. First run free.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-col items-center gap-4">
               <Link href="/workflow/builder?template=viral-social" className="btn-hero text-base px-10 py-4 inline-flex items-center gap-2.5">
                 Try the Viral Pipeline
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
-              <Link href="/dashboard" className="btn-secondary text-base px-8 py-4">
-                View Dashboard
+              <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700 transition-colors">
+                or view the dashboard →
               </Link>
             </div>
           </div>
@@ -353,25 +319,12 @@ export default function Home() {
       <footer className="border-t border-surface-300/60 bg-card/30">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <SparklesIcon className="h-5 w-5 text-accent-500" />
+            <Logo size={22} className="rounded-md" />
             <span className="text-sm font-semibold text-ink-600">NavniAI</span>
           </div>
           <p className="text-xs text-ink-300">Visual AI Agent Orchestration Platform • Built with Next.js & React Flow</p>
         </div>
       </footer>
-    </div>
-  )
-}
-
-// ─── Component: Stat Item ───
-function StatItem({ value, suffix = '', label, icon }: { value: number; suffix?: string; label: string; icon: React.ReactNode }) {
-  return (
-    <div className="text-center animate-counter-in">
-      <div className="flex items-center justify-center gap-2.5 mb-1.5">
-        <span className="text-accent-400">{icon}</span>
-        <span className="text-3xl sm:text-4xl font-extrabold tabular-nums gradient-number">{value}{suffix}</span>
-      </div>
-      <p className="text-xs text-ink-400 font-medium tracking-wide">{label}</p>
     </div>
   )
 }

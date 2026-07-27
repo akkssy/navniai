@@ -16,6 +16,10 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'NavniAI - Visual AI Agent Orchestration',
   description: 'Build, connect, and run AI agent workflows for any domain — coding, HR, legal, marketing, and more.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export const viewport: Viewport = {

@@ -16,7 +16,8 @@ import ReactFlow, {
   BackgroundVariant,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { SparklesIcon, ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import Logo from '@/components/Logo'
 import { executeWorkflowClientSide, AGENT_THINKING_MESSAGES, type StepProgress, type OnStreamCallback, type OnCheckpointCallback, type CheckpointRequest, type CheckpointDecision } from '../lib/workflowExecutor'
 import StoryboardPreview from '@/components/StoryboardPreview'
 import { loadSettings, getProviderBadge, getDemoRunsRemaining, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
@@ -632,7 +633,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
           </Link>
           <div className="h-4 w-px bg-surface-300" />
           <Link href="/" className="flex items-center gap-1.5">
-            <SparklesIcon className="h-4.5 w-4.5 text-accent-500" />
+            <Logo size={20} className="rounded-md" />
             <span className="text-sm font-bold text-ink-700">NavniAI</span>
           </Link>
 
