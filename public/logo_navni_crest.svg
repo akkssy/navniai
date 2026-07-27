@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Navni AI — main logo: a polished-gold N held in a single clean U-curve cradle
+       (the "hands"), with electric-teal neural nodes (AI). Matches the sidebar mono mark. -->
+  <defs>
+    <radialGradient id="bg" cx="256" cy="232" r="372" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B0A07"/>
+      <stop offset="1" stop-color="#040404"/>
+    </radialGradient>
+    <linearGradient id="goldN" x1="200" y1="150" x2="312" y2="312" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE9A8"/>
+      <stop offset="0.30" stop-color="#E7C25E"/>
+      <stop offset="0.50" stop-color="#D4A52A"/>
+      <stop offset="0.68" stop-color="#F0CE7A"/>
+      <stop offset="1" stop-color="#9A6F1C"/>
+    </linearGradient>
+    <linearGradient id="goldCradle" x1="110" y1="250" x2="402" y2="442" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9C7833"/>
+      <stop offset="0.5" stop-color="#7A5C28"/>
+      <stop offset="1" stop-color="#56411D"/>
+    </linearGradient>
+    <radialGradient id="aiSpark" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+        gradientTransform="translate(236 223) scale(120)">
+      <stop offset="0" stop-color="#8FFFEC"/>
+      <stop offset="1" stop-color="#3FE0C5"/>
+    </radialGradient>
+    <filter id="sparkGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Luxury black field + coin-seal ring -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="231" fill="none" stroke="#C9A24B" stroke-opacity="0.30" stroke-width="3"/>
+
+  <!-- Cupped-hand cradle: one clean U-curve (the "hands") that the N rests in -->
+  <path d="M132,272 C132,360 184,404 256,404 C328,404 380,360 380,272"
+        stroke="url(#goldCradle)" stroke-width="34"
+        stroke-linecap="round" fill="none"/>
+  <!-- cradle metallic sheen -->
+  <path d="M132,272 C132,360 184,404 256,404 C328,404 380,360 380,272"
+        stroke="#F0D588" stroke-opacity="0.35" stroke-width="3"
+        stroke-linecap="round" fill="none"/>
+  <!-- seam where the two hands meet (subtle notch at the base) -->
+  <path d="M256,372 L256,404" stroke="#2A1E0A" stroke-opacity="0.35"
+        stroke-width="3" stroke-linecap="round"/>
+
+  <!-- N monogram: polished-gold continuous stroke, softly curved diagonal, resting in the cradle -->
+  <path d="M170,312 L170,150 Q250,248 342,312 L342,150"
+        stroke="url(#goldN)" stroke-width="44"
+        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M170,312 L170,150 Q250,248 342,312 L342,150"
+        stroke="#6E4F15" stroke-opacity="0.30" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- AI: electric-teal neural nodes across the N's counter (intelligence nurtured by family) -->
+  <g filter="url(#sparkGlow)">
+    <path d="M170,150 L256,231 L342,150" fill="none"
+          stroke="#3FE0C5" stroke-opacity="0.7" stroke-width="2" stroke-linecap="round"/>
+    <g fill="url(#aiSpark)">
+      <circle cx="170" cy="150" r="9" fill="#3FE0C5" fill-opacity="0.18"/>
+      <circle cx="342" cy="150" r="9" fill="#3FE0C5" fill-opacity="0.18"/>
+      <circle cx="256" cy="231" r="10" fill="#3FE0C5" fill-opacity="0.18"/>
+      <circle cx="170" cy="150" r="6"/>
+      <circle cx="342" cy="150" r="6"/>
+      <circle cx="256" cy="231" r="7"/>
+    </g>
+  </g>
+</svg>
