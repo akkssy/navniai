@@ -711,6 +711,8 @@ export interface StepProgress {
   completedAt?: number
   /** Why this step was skipped (condition evaluated to false) */
   skipReason?: string
+  /** Error detail when the LLM call failed (provider fell back to 'simulated') */
+  error?: string
 }
 
 // ─── Human-in-the-Loop Checkpoint ───
@@ -1129,6 +1131,11 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
   // Shared scratchpad for ReAct tool use — persists across all steps in this run
   const scratchpad: Scratchpad = new Map()
 
+  // Single-slot local providers (Ollama) serve one request at a time — firing
+  // independent steps in parallel just queues them and can silently blow the
+  // per-call timeout. When Ollama is active, run ready steps sequentially.
+  const serializeSteps = loadSettings().activeProvider === 'ollama'
+
   while (remaining.length > 0) {
     // ─── Check Abort ───
     if (payload.signal?.aborted) {
@@ -1185,19 +1192,15 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
 
     if (stepsToRun.length === 0) continue
 
-    // ─── Execute: parallel when HITL is off, sequential when HITL is on ───
-    if (onCheckpoint && stepsToRun.length >= 1) {
-      // Sequential execution with HITL checkpoints
+    // ─── Execute: sequential for HITL / single-slot Ollama / lone step; parallel otherwise ───
+    if (onCheckpoint || serializeSteps || stepsToRun.length === 1) {
+      // Sequential — HITL checkpoints, single-slot Ollama (avoids the request
+      // queuing that silently times out), or just one ready step.
       for (const step of stepsToRun) {
         if (payload.signal?.aborted) break
         await executeOneStep(step, outputs, payload, done, steps.length, onProgress, onStream, onCheckpoint, remaining, completed, scratchpad)
         done++
       }
-    } else if (stepsToRun.length === 1) {
-      // Single step — no need for Promise.all overhead
-      const step = stepsToRun[0]
-      await executeOneStep(step, outputs, payload, done, steps.length, onProgress, onStream, undefined, remaining, completed, scratchpad)
-      done++
     } else {
       // ─── PARALLEL execution for independent branches ───
       const promises = stepsToRun.map(async (step, batchIdx) => {
@@ -1212,6 +1215,7 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
         let output: string
         let structured: AgentStructuredOutput = null
         let provider = 'simulated'
+        let stepError: string | undefined
 
         try {
           const result = await callStepLLM(step, outputs, payload, onStream, scratchpad)
@@ -1220,16 +1224,23 @@ export async function executeWorkflowClientSide(payload: WorkflowPayload, onProg
           structured = result.structured
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') throw err
+          const msg = err instanceof Error ? err.message : String(err)
           console.error(`[NavniAI] LLM call failed for step "${step.agent_name || step.agent}":`, err)
           output = getSimulatedOutput(step)
+          stepError = msg
         }
 
-        outputs[step.id] = { output, structured, status: 'completed', provider, agentId: step.agent }
+        // A 'simulated' provider means the whole provider chain + demo proxy failed —
+        // surface it as an error instead of a fake "completed" run.
+        const failed = provider === 'simulated'
+        if (failed && !stepError) stepError = output
+        outputs[step.id] = { output, structured, status: failed ? 'failed' : 'completed', provider, agentId: step.agent, error: failed ? stepError : undefined }
         completed.add(step.id)
         onProgress?.({
           stepId: step.id, agentId: step.agent, agentName: step.agent_name || step.agent,
-          status: 'completed', stepIndex: stepDone, totalSteps: steps.length,
+          status: failed ? 'failed' : 'completed', stepIndex: stepDone, totalSteps: steps.length,
           completedAt: Date.now(),
+          error: failed ? stepError : undefined,
         })
       })
 
@@ -1276,6 +1287,7 @@ async function executeOneStep(
   let output: string
   let structured: AgentStructuredOutput = null
   let provider = 'simulated'
+  let stepError: string | undefined
 
   try {
     const result = await callStepLLM(step, outputs, payload, onStream, scratchpad)
@@ -1303,8 +1315,10 @@ async function executeOneStep(
     }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err
+    const msg = err instanceof Error ? err.message : String(err)
     console.error(`[NavniAI] LLM call failed for step "${step.agent_name || step.agent}":`, err)
     output = getSimulatedOutput(step)
+    stepError = msg
   }
 
   // ─── Human-in-the-Loop Checkpoint ───
@@ -1347,11 +1361,16 @@ async function executeOneStep(
     }
   }
 
-  outputs[step.id] = { output, structured, status: 'completed', provider, agentId: step.agent }
+  // A 'simulated' provider means the whole provider chain + demo proxy failed —
+  // surface it as an error instead of a fake "completed" run.
+  const failed = provider === 'simulated'
+  if (failed && !stepError) stepError = output
+  outputs[step.id] = { output, structured, status: failed ? 'failed' : 'completed', provider, agentId: step.agent, error: failed ? stepError : undefined }
   completed?.add(step.id)
 
   onProgress?.({
     stepId: step.id, agentId: step.agent, agentName: step.agent_name || step.agent,
-    status: 'completed', stepIndex, totalSteps, completedAt: Date.now(),
+    status: failed ? 'failed' : 'completed', stepIndex, totalSteps, completedAt: Date.now(),
+    error: failed ? stepError : undefined,
   })
 }

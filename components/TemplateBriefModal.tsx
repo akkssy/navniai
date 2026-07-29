@@ -1,8 +1,43 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRightIcon } from '@heroicons/react/24/outline'
-import type { PipelineTemplate } from '@/lib/pipelineTemplates'
+import { ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import type { PipelineTemplate, BriefField } from '@/lib/pipelineTemplates'
+import { callLLMWithFallback } from '@/lib/llmProviders'
+
+// ── Helpers for the "auto-fill brief from a URL" on-ramp ──
+function parseBriefJson(text: string): Record<string, unknown> | null {
+  const t = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+  const start = t.indexOf('{')
+  const end = t.lastIndexOf('}')
+  if (start === -1 || end === -1 || end < start) return null
+  try {
+    const o = JSON.parse(t.slice(start, end + 1))
+    return o && typeof o === 'object' ? (o as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+function snapToOption(field: BriefField, value: string): string {
+  if (field.type !== 'select' || !field.options) return value
+  const exact = field.options.find(o => o.toLowerCase() === value.toLowerCase())
+  if (exact) return exact
+  const partial = field.options.find(
+    o => value.toLowerCase().includes(o.toLowerCase()) || o.toLowerCase().includes(value.toLowerCase()),
+  )
+  return partial || ''
+}
+
+function fetchErrorMessage(code: string): string {
+  switch (code) {
+    case 'invalid_or_blocked_url': return 'That URL looks invalid or is blocked. Try a public https link.'
+    case 'timeout': return 'That page took too long to load. Try another URL.'
+    case 'unsupported_content_type': return 'That link isn’t a web page. Paste an article or landing-page URL.'
+    case 'no_readable_content': return 'Couldn’t read any text from that page.'
+    default: return 'Couldn’t fetch that URL. Try another link.'
+  }
+}
 
 interface Props {
   template: PipelineTemplate
@@ -18,10 +53,62 @@ export function TemplateBriefModal({ template, onSubmit, onSkip }: Props) {
     return init
   })
   const [errors, setErrors] = useState<Record<string, boolean>>({})
+  const [url, setUrl] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [autofill, setAutofill] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
 
   const set = (key: string, value: string) => {
     setValues(v => ({ ...v, [key]: value }))
     setErrors(e => ({ ...e, [key]: false }))
+  }
+
+  const autofillFromUrl = async () => {
+    const target = url.trim()
+    if (!target) { setAutofill({ tone: 'error', text: 'Paste a URL first.' }); return }
+    setBusy(true)
+    setAutofill(null)
+    try {
+      const res = await fetch('/api/brief/from-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: target }),
+      })
+      const data = await res.json()
+      if (!data.ok) { setAutofill({ tone: 'error', text: fetchErrorMessage(data.error) }); return }
+
+      const fieldSpec = fields.map(f => {
+        const opts = f.type === 'select' && f.options ? ` (choose exactly one of: ${f.options.join(' | ')})` : ''
+        return `- "${f.key}" — ${f.label}${opts}`
+      }).join('\n')
+      const system = `You are a content strategist. From a web page's content, infer values to pre-fill a "${template.name}" brief. Return ONLY minified JSON: an object mapping each field key to a concise value (a few words). For select fields, return exactly one of the provided options. If a field can't be inferred, use "". No prose, no code fences.`
+      const message = `Brief purpose: ${template.description}\n\nFields to fill:\n${fieldSpec}\n\nPAGE TITLE: ${data.title || '(none)'}\nPAGE CONTENT:\n${data.text}`
+
+      const result = await callLLMWithFallback(system, message, undefined, 60000)
+      if (result.provider === 'simulated') {
+        setAutofill({ tone: 'error', text: 'Couldn’t reach your AI provider — fill the fields manually or check Settings.' })
+        return
+      }
+      const parsed = parseBriefJson(result.text)
+      if (!parsed) { setAutofill({ tone: 'error', text: 'The AI response could not be read. Try again or fill manually.' }); return }
+
+      let filled = 0
+      const next: Record<string, string> = { ...values }
+      for (const f of fields) {
+        const raw = parsed[f.key]
+        if (typeof raw !== 'string' || !raw.trim()) continue
+        const v = snapToOption(f, raw.trim())
+        if (v) { next[f.key] = v; filled++ }
+      }
+      setValues(next)
+      setErrors({})
+      setAutofill(filled > 0
+        ? { tone: 'success', text: `Pre-filled ${filled} field${filled === 1 ? '' : 's'} — review and edit before launching.` }
+        : { tone: 'error', text: 'Nothing could be inferred from that page. Fill the fields manually.' })
+    } catch {
+      setAutofill({ tone: 'error', text: 'Something went wrong fetching that URL.' })
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -57,7 +144,48 @@ export function TemplateBriefModal({ template, onSubmit, onSkip }: Props) {
 
         {/* Form card */}
         <div className="glass-card p-6 mb-4">
-          <p className="text-xs text-ink-400 mb-6 leading-relaxed">{template.description}</p>
+          <p className="text-xs text-ink-400 mb-4 leading-relaxed">{template.description}</p>
+
+          {/* Auto-fill from a URL — turn a link into a pre-filled strategy brief */}
+          <div className="mb-4 rounded-lg border border-accent-200 dark:border-accent-700/50 bg-accent-50/50 dark:bg-accent-900/10 p-3">
+            <label className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-accent-600 mb-1.5">
+              <SparklesIcon className="h-3.5 w-3.5" /> Start faster — auto-fill from a URL
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); autofillFromUrl() } }}
+                placeholder="Paste your site, landing page, or a competitor's profile…"
+                disabled={busy}
+                className="flex-1 bg-surface-50 border border-surface-300 rounded-lg px-3 py-2 text-xs text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 transition disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={autofillFromUrl}
+                disabled={busy || !url.trim()}
+                className="btn-secondary px-3 py-2 text-[11px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {busy ? (
+                  <><span className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> Reading…</>
+                ) : '✨ Auto-fill'}
+              </button>
+            </div>
+            {autofill && (
+              <p className={`text-[10px] mt-1.5 leading-relaxed ${autofill.tone === 'error' ? 'text-red-400' : 'text-emerald-500'}`}>
+                {autofill.text}
+              </p>
+            )}
+          </div>
+
+          {/* How it works — set expectations before launch */}
+          <div className="mb-6 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50/60 dark:bg-surface-800/40 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400 mb-1.5">How it works</p>
+            <p className="text-[11px] text-ink-500 leading-relaxed">
+              A chain of specialized AI agents runs live in your browser — researching, drafting, and refining your content step by step. You&apos;ll get ready-to-use outputs for every step, plus one-click copy and export to bring the results into your own editing and publishing tools.
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {fields.map(field => (

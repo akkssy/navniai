@@ -20,6 +20,7 @@ import { ArrowLeftIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/ou
 import Logo from '@/components/Logo'
 import { executeWorkflowClientSide, AGENT_THINKING_MESSAGES, type StepProgress, type OnStreamCallback, type OnCheckpointCallback, type CheckpointRequest, type CheckpointDecision } from '../lib/workflowExecutor'
 import StoryboardPreview from '@/components/StoryboardPreview'
+import HookAuditionView from '@/components/HookAuditionView'
 import { loadSettings, getProviderBadge, getDemoRunsRemaining, PROVIDER_REGISTRY, type LLMProviderKey } from '../lib/llmProviders'
 import { getTemplateById } from '../lib/pipelineTemplates'
 import { AgentNode } from './AgentNode'
@@ -856,6 +857,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                         const isDone = step.status === 'completed'
                         const isPending = step.status === 'pending'
                         const isReviewing = step.status === 'reviewing'
+                        const isFailed = step.status === 'failed'
                         const messages = AGENT_THINKING_MESSAGES[step.agentId] || ['Processing...']
                         const elapsed = isActive && step.startedAt ? Math.floor((Date.now() - step.startedAt) / 1000) : null
                         const duration = isDone && step.startedAt && step.completedAt ? ((step.completedAt - step.startedAt) / 1000).toFixed(1) : null
@@ -866,11 +868,12 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                             <div className="flex flex-col items-center w-8 shrink-0">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 border-2 transition-all duration-500 ${
                                 isDone ? 'bg-emerald-100 dark:bg-emerald-900 border-emerald-400 dark:border-emerald-600' :
+                                isFailed ? 'bg-red-100 dark:bg-red-900 border-red-400 dark:border-red-600' :
                                 isReviewing ? 'bg-amber-100 dark:bg-amber-900 border-amber-400 dark:border-amber-600 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/50 scale-110' :
                                 isActive ? 'bg-accent-100 dark:bg-accent-900 border-accent-400 dark:border-accent-500 shadow-lg shadow-accent-200/50 dark:shadow-accent-900/50 scale-110' :
                                 'bg-surface-100 dark:bg-surface-800 border-surface-300 dark:border-surface-600'
                               }`}>
-                                {isDone ? '✅' : isReviewing ? (
+                                {isDone ? '✅' : isFailed ? '❌' : isReviewing ? (
                                   <span className="text-xs">👁️</span>
                                 ) : isActive ? (
                                   <span className="animate-spin text-xs">⚙️</span>
@@ -881,6 +884,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                               {i < pipelineProgress.length - 1 && (
                                 <div className={`w-0.5 flex-1 min-h-[20px] transition-all duration-700 ${
                                   isDone ? 'bg-emerald-300 dark:bg-emerald-700' :
+                                  isFailed ? 'bg-red-300 dark:bg-red-700' :
                                   isReviewing ? 'bg-amber-300 dark:bg-amber-700' :
                                   isActive ? 'bg-gradient-to-b from-accent-400 to-surface-200 dark:from-accent-600 dark:to-surface-700' :
                                   'bg-surface-200 dark:bg-surface-700'
@@ -891,6 +895,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                             {/* Agent Card */}
                             <div className={`flex-1 rounded-lg px-4 py-3 mb-1 transition-all duration-500 border ${
                               isDone ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' :
+                              isFailed ? 'bg-red-50/60 dark:bg-red-950/30 border-red-200 dark:border-red-800' :
                               isReviewing ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-700 shadow-md' :
                               isActive ? 'bg-accent-50/70 dark:bg-accent-950/40 border-accent-200 dark:border-accent-700 shadow-md' :
                               'bg-surface-50/50 dark:bg-surface-800/30 border-surface-200 dark:border-surface-700 opacity-40'
@@ -900,6 +905,7 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                                   <span className="text-base">{agent?.icon || '⚙️'}</span>
                                   <span className={`text-sm font-semibold ${
                                     isDone ? 'text-emerald-700 dark:text-emerald-300' :
+                                    isFailed ? 'text-red-600 dark:text-red-400' :
                                     isReviewing ? 'text-amber-700 dark:text-amber-300' :
                                     isActive ? 'text-accent-700 dark:text-accent-300' :
                                     'text-ink-400'
@@ -908,11 +914,18 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                                 <div className="flex items-center gap-2">
                                   {isDone && duration && <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">{duration}s</span>}
                                   {isDone && <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-full">Complete</span>}
+                                  {isFailed && <span title={step.error} className="text-[10px] font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900 px-2 py-0.5 rounded-full cursor-help">Failed</span>}
                                   {isReviewing && <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900 px-2 py-0.5 rounded-full animate-pulse">Awaiting Review</span>}
                                   {isActive && elapsed !== null && <span className="text-[10px] font-mono text-accent-500 dark:text-accent-400 tabular-nums">{elapsed}s</span>}
                                   {isPending && <span className="text-[10px] text-ink-300">Queued</span>}
                                 </div>
                               </div>
+                              {/* Failed: surface the real provider error inline */}
+                              {isFailed && step.error && (
+                                <div className="mt-2 rounded-md bg-red-100/60 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5">
+                                  <pre className="whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-red-600 dark:text-red-400">{step.error.slice(0, 400)}</pre>
+                                </div>
+                              )}
 
                               {/* Active agent: live streaming text or thinking message */}
                               {isActive && (
@@ -1111,6 +1124,14 @@ export function WorkflowBuilder({ templateId, runId, workflowId, briefValues = {
                       <span className="text-[10px] text-ink-300 ml-auto">Uses your Platform Adapter output</span>
                     </div>
                   )
+                })()}
+
+                {/* ── Hook Audition: rendered when hook_generator step is present ── */}
+                {(() => {
+                  const hgNode = nodes.find(n => n.data?.agent?.id === 'hook_generator')
+                  const hgOut = hgNode ? executionOutputs[hgNode.id]?.output : ''
+                  if (!hgOut?.includes('===HOOKS===')) return null
+                  return <HookAuditionView rawOutput={hgOut} />
                 })()}
 
                 {/* ── Storyboard Preview: rendered when shot_compiler step is present ── */}

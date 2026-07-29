@@ -307,8 +307,11 @@ export default function StoryboardPreview({ rawOutput }: Props) {
 
       {/* ── Export for video tools: NavniAI is the brain, render anywhere ── */}
       <div className="px-4 py-3 border-t border-surface-200 dark:border-surface-700">
-        <p className="text-[10px] text-ink-400 font-semibold mb-2">
+        <p className="text-[10px] text-ink-400 font-semibold mb-1.5">
           📤 Feed your video tool — hand this production kit to InVideo, CapCut, Premiere, or any editor
+        </p>
+        <p className="text-[10px] text-ink-300 mb-2 leading-relaxed">
+          NavniAI writes the script, captions, and shot-by-shot plan. Assembling the final video and publishing happen in your editor for now — one-click video generation and auto-publishing are on the roadmap.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
